@@ -2,7 +2,8 @@ package glgui;
 
 import ogl.GLM;
 import gl3font.Font;
-import glgui.Macros;
+import goodies.Builder;
+import goodies.Maybe;
 
 enum TextAlign {
     TextAlignLeft;
@@ -26,7 +27,7 @@ class Text implements Element<Text> {
     /** Text colour */
     @:builder var colour:Vec4 = [1.0,1.0,1.0,1.0];
     /** Text GL3 Font */
-    @:builder var font:Font = null;
+    @:builder var font:Font;
     /** Text horizontal align */
     @:builder var halign = TextAlignCentre;
     /** Text vertical align */
@@ -40,6 +41,7 @@ class Text implements Element<Text> {
 
     var transform:Mat3x2;
     var buffer:StringBuffer;
+    var textBounds:Vec4;
     /**
      * Optional: Instantiate text with some string.
      *           Result will be a 'static' text element whose
@@ -49,6 +51,7 @@ class Text implements Element<Text> {
         this.text(text);
         buffer = new StringBuffer(null, text.length, text.length != 0);
         transform = Mat3x2.identity();
+        textBounds = [0,0,0,0];
     }
 
     // Element
@@ -66,8 +69,7 @@ class Text implements Element<Text> {
     }
 
     // Element
-    var textBounds:Vec4;
-    public function bounds():Null<Vec4> return textBounds;
+    public function bounds():Maybe<Vec4> return textBounds;
 
     // Element
     public function commit() {

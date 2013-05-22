@@ -1,7 +1,10 @@
 package glgui;
 
 import ogl.GLM;
-import glgui.Macros;
+import goodies.Builder;
+using goodies.Maybe;
+import goodies.Lazy;
+import goodies.Func;
 
 enum MouseButton {
     MouseLeft;
@@ -29,18 +32,18 @@ class Mouse implements Element<Mouse> {
       * Function defining what it is to be in the mouse areas area.
       * If null, then the mouse areas 'fit' rectangle is used
       */
-    @:builder var interior:Null<Vec2->Bool> = null;
+    @:builder var interior:Maybe<Vec2->Bool> = null;
 
     /** Handler for mouse-enter event */
-    @:builder var enter  :Null<Void->Void> = null;
+    @:builder var enter  :Maybe<Void->Void> = null;
     /** Handler for mouse-exit event */
-    @:builder var exit   :Null<Void->Void> = null;
+    @:builder var exit   :Maybe<Void->Void> = null;
     /** Handler for mouse-press event, with mouse area pressed */
-    @:builder var press  :Null<MouseButton->Void> = null;
+    @:builder var press  :Maybe<MouseButton->Void> = null;
     /** Handler for mouse-release event, with mouse area released */
-    @:builder var release:Null<MouseButton->Void> = null;
+    @:builder var release:Maybe<MouseButton->Void> = null;
     /** Handler for mouse-scroll event, TODO */
-    @:builder var scroll :Null<Int->Void>  = null;
+    @:builder var scroll :Maybe<Int->Void>  = null;
 
     /** If mouse is currently over mouse area */
     public var isOver         (default,null) = false;
@@ -58,17 +61,19 @@ class Mouse implements Element<Mouse> {
     // Element
     public function internal(x:Vec2) {
         var int = getInterior();
-        if (int == null) {
-            var fit = getFit();
-            var dx = x.x - fit.x;
-            var dy = x.y - fit.y;
-            return dx >= 0 && dx <= fit.z &&
-                   dy >= 0 && dy <= fit.w;
-        }
-        else return int(x);
+        return int.run(
+            Func.call1.bind(_,x),
+            function () {
+                var fit = getFit();
+                var dx = x.x - fit.x;
+                var dy = x.y - fit.y;
+                return dx >= 0 && dx <= fit.z &&
+                       dy >= 0 && dy <= fit.w;
+            }
+        );
     }
     // Element
-    public function bounds():Null<Vec4> return null;
+    public function bounds():Maybe<Vec4> return null;
     // Element
     public function commit() {
         return this;
@@ -80,21 +85,21 @@ class Mouse implements Element<Mouse> {
     function inside(gui:Gui) {
         if (!isOver) {
             isOver = true;
-            if (getEnter() != null) getEnter()();
+            getEnter().call();
         }
         if (!isPressedLeft && gui.mouseWasPressedLeft) {
             isPressedLeft = true;
-            if (getPress() != null) getPress()(MouseLeft);
+            getPress().call1(MouseLeft);
             gui.focusLeft.push(this);
         }
         if (!isPressedRight && gui.mouseWasPressedRight) {
             isPressedRight = true;
-            if (getPress() != null) getPress()(MouseRight);
+            getPress().call1(MouseRight);
             gui.focusRight.push(this);
         }
         if (!isPressedMiddle && gui.mouseWasPressedMiddle) {
             isPressedMiddle = true;
-            if (getPress() != null) getPress()(MouseMiddle);
+            getPress().call1(MouseMiddle);
             gui.focusMiddle.push(this);
         }
     }
@@ -105,7 +110,7 @@ class Mouse implements Element<Mouse> {
     function outside(gui:Gui) {
         if (isOver) {
             isOver = false;
-            if (getExit() != null) getExit()();
+            getExit().call();
         }
     }
 
@@ -114,17 +119,17 @@ class Mouse implements Element<Mouse> {
     @:allow(glgui)
     function releasedLeft() {
         isPressedLeft = false;
-        if (getRelease() != null) getRelease()(MouseLeft);
+        getRelease().call1(MouseLeft);
     }
     @:allow(glgui)
     function releasedRight() {
         isPressedRight = false;
-        if (getRelease() != null) getRelease()(MouseRight);
+        getRelease().call1(MouseRight);
     }
     @:allow(glgui)
     function releasedMiddle() {
         isPressedMiddle = false;
-        if (getRelease() != null) getRelease()(MouseMiddle);
+        getRelease().call1(MouseMiddle);
     }
 
     // Element

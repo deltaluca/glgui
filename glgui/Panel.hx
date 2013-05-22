@@ -2,7 +2,9 @@ package glgui;
 
 import ogl.GLM;
 import gl3font.Font;
-import glgui.Macros;
+import goodies.Builder;
+import goodies.Maybe;
+import goodies.Lazy;
 
 /**
  * Rounded rectangular panel GUI element.
@@ -21,10 +23,9 @@ class Panel implements Element<Panel> {
     @:builder var colour:Vec4 = [1.0,1.0,1.0,1.0];
 
     // Abuse GL3Font for this.
-    static var font:Font;
+    @:lazyVar static var font:Font = new Font(null, "quarter_circle.distance.png");
     var buffer:StringBuffer;
     public function new() {
-        if (font == null) font = new Font(null, "quarter_circle.distance.png");
         buffer = new StringBuffer(font, 9, true);
     }
 
@@ -34,7 +35,7 @@ class Panel implements Element<Panel> {
     }
 
     // Element
-    public function bounds():Null<Vec4> return getFit();
+    public function bounds():Maybe<Vec4> return getFit();
     // Element
     public function internal(x:Vec2) {
         var fit = getFit();

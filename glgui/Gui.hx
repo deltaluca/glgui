@@ -2,26 +2,28 @@ package glgui;
 
 import ogl.GLM;
 import gl3font.Font;
-import glgui.Macros;
+import goodies.Builder;
+import goodies.Maybe;
 
 /**
  * @:noCompletion
  */
 enum GuiState {
+    GSNone;
     GSText;
 }
 
 /**
  * GUI alpha and omega
  */
-class Gui implements Builder {
+class Gui implements Builder implements MaybeEnv {
     var renderState:GuiState;
     var textRender:FontRenderer;
     var registeredMice:Array<Mouse>;
 
     public function new() {
         textRender = new FontRenderer();
-        renderState = null;
+        renderState = GSNone;
 
         registeredMice = [];
 
@@ -42,12 +44,11 @@ class Gui implements Builder {
      * draw calls, and process any remaining events.
      */
     public function flush() {
-        if (renderState != null) {
-            switch (renderState) {
-                case GSText: textRender.end();
-            }
-            renderState = null;
+        switch (renderState) {
+        case GSText: textRender.end();
+        case GSNone:
         }
+        renderState = GSNone;
 
         for (m in registeredMice) m.inside(this);
         registeredMice = [];
@@ -130,7 +131,9 @@ class Gui implements Builder {
      * Renderer's begin() end() calls are auto managed.
      */
     public function textRenderer() {
-        if (renderState == null || !Type.enumEq(renderState, GSText)) {
+        switch (renderState) {
+        case GSText:
+        default:
             flush();
             renderState = GSText;
             textRender.begin();

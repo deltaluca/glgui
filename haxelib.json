@@ -9,6 +9,8 @@
     "contributors": ["deltaluca"],
     "dependencies": {
         "ogl": "",
-        "gl3font": ""
+        "gl3font": "",
+        "goodies": "",
+        "test": ""
     }
 }

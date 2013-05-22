@@ -1,18 +1,20 @@
 package glgui;
 
-import glgui.Macros;
 import glgui.Gui;
 import ogl.GLM;
+import goodies.Builder;
+import goodies.Maybe;
+import goodies.Lazy;
 
 /**
  * GL-GUI Element.
  */
-interface Element<T> extends Builder {
+interface Element<T> extends Builder extends MaybeEnv extends LazyEnv {
     /**
      * Inactive elements are not rendered, and undergo
      * no change in state or event activity.
      */
-    @:builder(return T) var active:Bool;
+    @:builder(ret=T) var active:Bool;
 
     /**
      * Rectangular region of coordinate system to fit
@@ -24,7 +26,7 @@ interface Element<T> extends Builder {
      * and is valid only for those elements which do not
      * undergo scaling!
      */
-    @:builder(return T) var fit:Vec4;
+    @:builder(ret=T) var fit:Vec4;
 
     /**
      * An occluder will act as a spatial barrier to the reach
@@ -57,7 +59,7 @@ interface Element<T> extends Builder {
      * Returns the local coordinate bounds of the element
      * Returns null if element has no bounds (eg Mouse)
      */
-    public function bounds():Null<Vec4>;
+    public function bounds():Maybe<Vec4>;
 
     /**
      * @:noCompletion

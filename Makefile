@@ -1,8 +1,9 @@
-all: haxelib main
+all: main
 	./bin/Main-debug
 
 main:
-	haxe -main Main -cpp bin -D HXCPP_M64 -debug -lib ogl -lib glfw3 -lib gl3font -lib nape
+	set -x
+	haxe -main Main -cpp bin -D HXCPP_M64 -debug -lib ogl -lib glfw3 -lib gl3font -lib goodies
 
 haxelib:
 	rm -f glgui.zip
