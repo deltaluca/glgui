@@ -21,7 +21,16 @@ class MacrosBuild {
         for (f in fields) {
             var meta = Utils.hasMeta(f, ":builder");
             if (meta == null) continue;
-            if (meta.length != 0) self = Context.toComplexType(Context.getType(switch (meta[0].expr) { case EConst(CIdent(s)): s; default: ""; }));
+            var react = macro {};
+            for (m in meta) {
+                switch (m) {
+                case macro return $i{e}:
+                    self = Context.toComplexType(Context.getType(e));
+                case macro react=$e:
+                    react = macro $e(param);
+                default:
+                }
+            }
             switch (f.kind) {
             case FVar(t,e):
                 // Prefix field with _
@@ -39,8 +48,9 @@ class MacrosBuild {
                 if (iface) f.kind = null;
 
                 // Add builder getter/setter
-                gields.push(Utils.field(macro function (x:$t):$self {
-                    $i{f.name} = x;
+                gields.push(Utils.field(macro function (param:$t):$self {
+                    $react;
+                    $i{f.name} = param;
                     return this;
                 }, access, fname, iface));
                 var fname2 = "get"+fname.charAt(0).toUpperCase()+fname.substr(1);

@@ -8,6 +8,7 @@ import glgui.Gui;
 import glgui.Cache;
 import glgui.Text;
 import glgui.Panel;
+import glgui.Mouse;
 
 using glgui.Transform;
 using glgui.Colour;
@@ -24,13 +25,17 @@ class Main {
         GL.enable(GL.BLEND);
         GL.blendFunc(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA);
 
-        var gui = new Gui(800, 600);
+        var gui = new Gui().projection(Mat3x2.viewportMap(800, 600));
         var cache = new Cache();
         var dejavu = new Font("../gl3font/dejavu/sans.dat", "../gl3font/dejavu/sans.png");
         while (!GLFW.windowShouldClose(w)) {
             GLFW.pollEvents();
 
             GL.clear(GL.COLOR_BUFFER_BIT);
+            gui.mousePos(GLFW.getCursorPos(w))
+               .mouseLeft  (GLFW.getMouseButton(w, GLFW.MOUSE_BUTTON_LEFT))
+               .mouseRight (GLFW.getMouseButton(w, GLFW.MOUSE_BUTTON_RIGHT))
+               .mouseMiddle(GLFW.getMouseButton(w, GLFW.MOUSE_BUTTON_MIDDLE));
 
             var panel = cache.cache("panel",
                 new Panel()
@@ -51,6 +56,27 @@ class Main {
                 .commit()
             );
             gui.render(title);
+
+            var mouse = cache.cache("mouse",
+                new Mouse()
+                .interior(panel.internal)
+                .enter(function () trace("enter"))
+                .exit(function () trace("exit"))
+                .press(function (but) trace("press "+but))
+                .release(function (but) trace("release "+but))
+                .scroll(function (delta) trace("scroll "+delta))
+            );
+            gui.render(mouse);
+
+            var panel2 = cache.cache("panel2",
+                new Panel()
+                .fit([300,250,200,100])
+                .hex(0x4000ff00)
+                .radius(50)
+                .commit()
+            );
+            gui.render(panel2);
+
 
             gui.flush();
             GLFW.swapBuffers(w);
