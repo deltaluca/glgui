@@ -7,8 +7,10 @@ import gl3font.Font;
 import glgui.Gui;
 import glgui.Cache;
 import glgui.Text;
+import glgui.Panel;
 
 using glgui.Transform;
+using glgui.Colour;
 
 class Main {
     static function main () {
@@ -25,11 +27,19 @@ class Main {
         var gui = new Gui(800, 600);
         var cache = new Cache();
         var dejavu = new Font("../gl3font/dejavu/sans.dat", "../gl3font/dejavu/sans.png");
-
         while (!GLFW.windowShouldClose(w)) {
             GLFW.pollEvents();
 
             GL.clear(GL.COLOR_BUFFER_BIT);
+
+            var panel = cache.cache("panel",
+                new Panel()
+                .fit([100,100,600,400])
+                .hex(0x40ff0000)
+                .radius(100)
+                .commit()
+            );
+            gui.render(panel);
 
             var title = cache.cache("title",
                 new Text()
@@ -37,12 +47,12 @@ class Main {
                 .text("Hello World!")
                 .size(30)
                 .position([400,300])
+                .hex(0xff0000)
                 .commit()
             );
-
             gui.render(title);
-            gui.flush();
 
+            gui.flush();
             GLFW.swapBuffers(w);
         }
 

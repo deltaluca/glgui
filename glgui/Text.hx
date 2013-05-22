@@ -66,6 +66,7 @@ class Text implements Element<Text> {
     }
 
     public function render(gui:Gui, xform:Mat3x2) {
+        if (!getVisible()) return;
         gui.textRenderer()
             .setColour(getColour())
             .setTransform(xform * transform)

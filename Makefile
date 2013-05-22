@@ -8,3 +8,6 @@ haxelib:
 	rm -f glgui.zip
 	zip -r glgui haxelib.json
 	haxelib local glgui.zip
+
+assets:
+	haxe -x Assets.hx
