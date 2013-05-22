@@ -1,0 +1,14 @@
+{
+    "name":         "glgui",
+    "url":          "https://github.com/deltaluca/glgui",
+    "license":      "MIT",
+    "tags":         ["cpp"],
+    "description":  "GUI based on hx-ogl, and gl3font",
+    "version":      "0.0.0",
+    "releasenote":  "",
+    "contributors": ["deltaluca"],
+    "dependencies": {
+        "ogl": "",
+        "gl3font": ""
+    }
+}
