@@ -9,6 +9,7 @@ import glgui.Cache;
 import glgui.Text;
 import glgui.Panel;
 import glgui.Mouse;
+import glgui.GLFWGui;
 
 using glgui.Transform;
 using glgui.Colour;
@@ -16,38 +17,24 @@ using glgui.Colour;
 class Main {
     static function main () {
         GLFW.init();
-        GLFW.windowHint(GLFW.SAMPLES, 8);
+
         var w = GLFW.createWindow(800, 600, "Main");
         GLFW.makeContextCurrent(w);
-        GL.init();
 
+        GL.init();
         GL.viewport(0, 0, 800, 600);
         GL.enable(GL.BLEND);
         GL.blendFunc(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA);
 
-        var pos = GLFW.getCursorPos(w);
-        var outsideScreen = pos.x < 0 || pos.y < 0 || pos.x >= 800 || pos.y >= 600;
-        var scroll:Float = 0;
-        GLFW.setCursorEnterCallback(w, function (_,entered) {
-            outsideScreen = !entered;
-        });
-        GLFW.setScrollCallback(w, function(_,_, y:Float) {
-            scroll += y;
-        });
-
-        var gui = new Gui().projection(Mat3x2.viewportMap(800, 600));
+        var glfw = new GLFWGui(w);
+        var gui = new Gui();
         var cache = new Cache();
         var dejavu = new Font("../gl3font/dejavu/sans.dat", "../gl3font/dejavu/sans.png");
-        while (!GLFW.windowShouldClose(w)) {
-            scroll = 0;
-            GLFW.pollEvents();
 
+        while (!GLFW.windowShouldClose(w)) {
             GL.clear(GL.COLOR_BUFFER_BIT);
-            gui.mouseLeft  (GLFW.getMouseButton(w, GLFW.MOUSE_BUTTON_LEFT))
-               .mouseRight (GLFW.getMouseButton(w, GLFW.MOUSE_BUTTON_RIGHT))
-               .mouseMiddle(GLFW.getMouseButton(w, GLFW.MOUSE_BUTTON_MIDDLE))
-               .mousePos(if (outsideScreen) null else GLFW.getCursorPos(w))
-               .mouseScroll(scroll);
+            GLFW.pollEvents();
+            glfw.updateState(gui);
 
             var panel = cache.cache("panel",
                 new Panel()
@@ -82,13 +69,12 @@ class Main {
 
             var panel2 = cache.cache("panel2",
                 new Panel()
-                .fit([300,250,200,100])
+                .fit([400,250,200,100])
                 .hex(0x4000ff00)
                 .radius(50)
                 .commit()
             );
             gui.render(panel2);
-
 
             gui.flush();
             GLFW.swapBuffers(w);
