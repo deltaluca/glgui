@@ -22,9 +22,7 @@ interface Element<T> extends Builder extends MaybeEnv extends LazyEnv {
      *
      * Any scaling/relative positioning is element dependent
      *
-     * Setting element position sets its fit to (x,y,0,0)
-     * and is valid only for those elements which do not
-     * undergo scaling!
+     * Setting element position sets its fit.xy to (x,y)
      */
     @:builder(ret=T) var fit:Vec4;
 
