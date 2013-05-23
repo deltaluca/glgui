@@ -42,8 +42,8 @@ class Mouse implements Element<Mouse> {
     @:builder var press  :Maybe<MouseButton->Void> = null;
     /** Handler for mouse-release event, with mouse area released */
     @:builder var release:Maybe<MouseButton->Void> = null;
-    /** Handler for mouse-scroll event, TODO */
-    @:builder var scroll :Maybe<Int->Void>  = null;
+    /** Handler for mouse-scroll event */
+    @:builder var scroll :Maybe<Float->Void>  = null;
 
     /** If mouse is currently over mouse area */
     public var isOver         (default,null) = false;
@@ -102,6 +102,9 @@ class Mouse implements Element<Mouse> {
             getPress().call1(MouseMiddle);
             gui.focusMiddle.push(this);
         }
+
+        if (gui.getMouseScroll() != 0)
+            getScroll().call1(gui.getMouseScroll());
     }
 
     // Called by Gui when mouse is definitely outside mouse area
@@ -133,8 +136,8 @@ class Mouse implements Element<Mouse> {
     }
 
     // Element
-    public function render(gui:Gui, mousePos:Vec2, _) {
-        if (internal(mousePos)) gui.registerMouse(this);
+    public function render(gui:Gui, mousePos:Maybe<Vec2>, _) {
+        if (mousePos.runOr(internal, false)) gui.registerMouse(this);
         else outside(gui);
     }
 }

@@ -71,12 +71,18 @@ class Gui implements Builder implements MaybeEnv {
      * Set projection matrix for gui rendering.
      * eg: Mat3x2.viewportMap(width, height)
      */
-    @:builder var projection:Mat3x2;
+    @:builder var projection:Mat3x2 = Mat3x2.identity();
 
     /**
      * Set mouse position for event processing.
+     * null indicates mouse is outside the screen.
      */
-    @:builder var mousePos:Vec2;
+    @:builder var mousePos:Maybe<Vec2> = null;
+
+    /**
+     * Set mouse scroll offset
+     */
+    @:builder var mouseScroll:Float = 0.0;
 
     /**
      * Set mouse left/right/middle button states for
@@ -113,7 +119,7 @@ class Gui implements Builder implements MaybeEnv {
      */
     public function render<S,T:Element<S>>(x:T) {
         if (x.getActive()) {
-            if (x.internal(getMousePos()) && x.getOccluder()) {
+            if (getMousePos().runOr(x.internal, false) && x.getOccluder()) {
                 for (m in registeredMice) m.outside(this);
                 registeredMice = [];
             }

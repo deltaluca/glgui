@@ -69,5 +69,5 @@ interface Element<T> extends Builder extends MaybeEnv extends LazyEnv {
      *
      * transform is parent transformation for rendering.
      */
-    public function render(gui:Gui, mouse:Vec2, transform:Mat3x2):Void;
+    public function render(gui:Gui, mouse:Maybe<Vec2>, transform:Mat3x2):Void;
 }

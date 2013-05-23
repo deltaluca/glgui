@@ -10,7 +10,6 @@
     "dependencies": {
         "ogl": "",
         "gl3font": "",
-        "goodies": "",
-        "test": ""
+        "goodies": ""
     }
 }
