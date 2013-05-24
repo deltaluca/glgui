@@ -5,6 +5,7 @@ import goodies.Builder;
 using goodies.Maybe;
 import goodies.Lazy;
 import goodies.Func;
+import glgui.Gui;
 
 enum MouseButton {
     MouseLeft;
@@ -44,6 +45,12 @@ class Mouse implements Element<Mouse> {
     @:builder var release:Maybe<MouseButton->Bool->Void> = null;
     /** Handler for mouse-scroll event */
     @:builder var scroll :Maybe<Float->Void>  = null;
+
+
+    /** Handler for key event (in sight) */
+    /** Handler for character event (in sight) */
+    @:builder var key:Maybe<Array<{key:Int,state:KeyState}>->Void> = null;
+    @:builder var character:Maybe<Array<Int>->Void> = null;
 
     /** If mouse is currently over mouse area */
     public var isOver         (default,null) = false;
@@ -90,17 +97,17 @@ class Mouse implements Element<Mouse> {
         if (!isPressedLeft && gui.mouseWasPressedLeft) {
             isPressedLeft = true;
             getPress().call1(MouseLeft);
-            gui.focusLeft.push(this);
+            gui.sightLeft.push(this);
         }
         if (!isPressedRight && gui.mouseWasPressedRight) {
             isPressedRight = true;
             getPress().call1(MouseRight);
-            gui.focusRight.push(this);
+            gui.sightRight.push(this);
         }
         if (!isPressedMiddle && gui.mouseWasPressedMiddle) {
             isPressedMiddle = true;
             getPress().call1(MouseMiddle);
-            gui.focusMiddle.push(this);
+            gui.sightMiddle.push(this);
         }
 
         if (gui.getMouseScroll() != 0)

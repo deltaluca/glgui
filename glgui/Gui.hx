@@ -15,6 +15,12 @@ enum GuiState {
     GSImage;
 }
 
+enum KeyState {
+    KSPress;
+    KSHold;
+    KSRelease;
+}
+
 /**
  * GUI alpha and omega
  */
@@ -31,9 +37,11 @@ class Gui implements Builder implements MaybeEnv {
         renderState = GSNone;
         registeredMice = [];
 
-        focusLeft   = [];
-        focusRight  = [];
-        focusMiddle = [];
+        sightLeft   = [];
+        sightRight  = [];
+        sightMiddle = [];
+
+        focus = [];
     }
 
     /**
@@ -48,28 +56,40 @@ class Gui implements Builder implements MaybeEnv {
      * Finish drawing GUI, this will flush any pending
      * draw calls, and process any remaining events.
      */
-    public function flush() {
+    public function flushRender() {
         switch (renderState) {
         case GSText: textRender.end();
         case GSImage: imageRender.end();
         case GSNone:
         }
         renderState = GSNone;
-
+    }
+    public function flush() {
+        flushRender();
         for (m in registeredMice) m.inside(this);
         registeredMice = [];
 
+        if (sightLeft.length != 0)
+             focus = sightLeft = sightLeft.filter(function (x) return x!=null);
+        else sightLeft = sightLeft.filter(function (x) return x!=null);
+
         if (!getMouseLeft()) {
-            for (m in focusLeft) m.releasedLeft();
-            focusLeft = [];
+            for (m in sightLeft) m.releasedLeft();
+            sightLeft = [];
         }
         if (!getMouseMiddle()) {
-            for (m in focusMiddle) m.releasedMiddle();
-            focusMiddle = [];
+            for (m in sightMiddle) m.releasedMiddle();
+            sightMiddle = [];
         }
         if (!getMouseRight()) {
-            for (m in focusRight) m.releasedRight();
-            focusRight = [];
+            for (m in sightRight) m.releasedRight();
+            sightRight = [];
+        }
+        var keys = getKeysPressed();
+        var chars = getCharsPressed();
+        for (f in focus) {
+            if (keys.length  != 0) f.getKey()      .call1(keys);
+            if (chars.length != 0) f.getCharacter().call1(chars);
         }
     }
 
@@ -94,15 +114,24 @@ class Gui implements Builder implements MaybeEnv {
      * Set mouse left/right/middle button states for
      * event processing.
      */
-    @:builder(react = function (mouseLeft)
-        mouseWasPressedLeft = !getMouseLeft()&&mouseLeft
-    ) var mouseLeft = false;
+    @:builder(react = function (mouseLeft) {
+        mouseWasPressedLeft = !getMouseLeft()&&mouseLeft;
+        if (mouseWasPressedLeft)
+            sightLeft.push(null);
+    }) var mouseLeft = false;
     @:builder(react = function (mouseRight)
         mouseWasPressedRight = !getMouseRight()&&mouseRight
     ) var mouseRight = false;
     @:builder(react = function (mouseMiddle)
         mouseWasPressedMiddle = !getMouseMiddle()&&mouseMiddle
     ) var mouseMiddle = false;
+
+    /*
+     * Set of raw keys pressed for this frame
+     * Set of 'characters' pressed for this frame
+     */
+    @:builder var keysPressed :Array<{key:Int,state:KeyState}> = [];
+    @:builder var charsPressed:Array<Int> = [];
 
     /*
      * True if (based on provided state) the mouse button
@@ -113,12 +142,18 @@ class Gui implements Builder implements MaybeEnv {
     public var mouseWasPressedMiddle(default,null) = false;
 
     /*
-     * List of Mouse elements currently holding focus of
+     * List of Mouse elements currently holding sight of
      * mouse buttons (Possibly many if overlapping and not occluded).
      */
-    public var focusLeft  (default,null):Array<Mouse>;
-    public var focusRight (default,null):Array<Mouse>;
-    public var focusMiddle(default,null):Array<Mouse>;
+    public var sightLeft  (default,null):Array<Mouse>;
+    public var sightRight (default,null):Array<Mouse>;
+    public var sightMiddle(default,null):Array<Mouse>;
+
+    /*
+     * List of Mouse elements currently in focus by left-click
+     * selectino (Possibly many if overlapping and not occluded).
+     */
+    public var focus(default,null):Array<Mouse>;
 
     /*
      * Render a GUI element
@@ -146,7 +181,7 @@ class Gui implements Builder implements MaybeEnv {
         switch (renderState) {
         case GSText:
         default:
-            flush();
+            flushRender();
             renderState = GSText;
             textRender.begin();
         }
@@ -157,7 +192,7 @@ class Gui implements Builder implements MaybeEnv {
         switch (renderState) {
         case GSImage:
         default:
-            flush();
+            flushRender();
             renderState = GSImage;
             imageRender.begin();
         }

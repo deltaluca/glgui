@@ -14,6 +14,9 @@ class GLFWGui {
     var proj:Mat3x2;
     var scroll:Float;
 
+    var keysPressed:Array<{key:Int,state:KeyState}>;
+    var charsPressed:Array<Int>;
+
     public function new(w:Window) {
         window = w;
         var pos  = GLFW.getWindowPos(w);
@@ -27,6 +30,11 @@ class GLFWGui {
         proj = Mat3x2.viewportMap(size.width, size.height);
         GLFW.setCursorEnterCallback(window, enterCallback);
         GLFW.setScrollCallback(window, scrollCallback);
+
+        GLFW.setKeyCallback (window, keyCallback);
+        GLFW.setCharCallback(window, charCallback);
+        keysPressed = [];
+        charsPressed = [];
     }
 
     function enterCallback(_, entered) {
@@ -35,6 +43,21 @@ class GLFWGui {
     function scrollCallback(_,_, y:Float) {
         scroll += y;
     }
+    function keyCallback(_, key:Int, state:Int, _) {
+        if (state == GLFW.PRESS)
+            keysPressed.push({key:key,state:KSPress});
+        else if (state == GLFW.RELEASE) {
+            for (k in keysPressed) {
+                if (k.key == key) {
+                    k.state = KSRelease;
+                    break;
+                }
+            }
+        }
+    }
+    function charCallback(_, char:Int) {
+        charsPressed.push(char);
+    }
 
     public function updateState(gui:Gui) {
         gui.projection(proj)
@@ -42,8 +65,16 @@ class GLFWGui {
            .mouseRight (GLFW.getMouseButton(window, GLFW.MOUSE_BUTTON_RIGHT))
            .mouseMiddle(GLFW.getMouseButton(window, GLFW.MOUSE_BUTTON_MIDDLE))
            .mousePos(if (mouseOver) GLFW.getCursorPos(window) else null)
-           .mouseScroll(scroll);
+           .mouseScroll(scroll)
+           .keysPressed(keysPressed.copy())
+           .charsPressed(charsPressed.copy());
         scroll = 0;
+        charsPressed = [];
+        for (k in keysPressed) {
+            if (k.state == KSPress)
+                keysPressed.push({key:k.key, state:KSHold});
+        }
+        keysPressed = keysPressed.filter(function (k) return Type.enumEq(k.state, KSHold));
     }
 }
 

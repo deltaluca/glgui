@@ -73,13 +73,15 @@ class Main {
                 .press(function (but) trace("press "+but))
                 .release(function (but,over) trace("release "+but+" "+over))
                 .scroll(function (delta) trace("scroll "+delta))
+//                .character(function (chars) trace("chars "+chars))
+                .key(function (keys) trace("keys "+keys))
             );
             gui.render(mouse);
 
             var button1 = cache.cache("button1",
                 new PanelButton(true)
                 .fit([200,200,100,30])
-                .radius(10)
+                .radius(0)
                 .font(dejavu)
                 .text("Test")
                 .press(function (enabled) {
@@ -93,7 +95,7 @@ class Main {
             var button = cache.cache("button",
                 new PanelButton()
                 .fit([300,200,100,30])
-                .radius(10)
+                .radius(0)
                 .font(dejavu)
                 .text("Test")
                 .press(function (enabled) {

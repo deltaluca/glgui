@@ -111,7 +111,7 @@ class PanelButton implements Element<PanelButton> {
         buttonMiddle
             .fit(fit + new Vec4([t,t,-t*2,-t*2]))
             .colour(getColour())
-            .radius(r - t)
+            .radius(Math.max(0, r - t))
             .commit();
         buttonOver
             .fit(fit)
