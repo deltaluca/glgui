@@ -41,7 +41,7 @@ class Mouse implements Element<Mouse> {
     /** Handler for mouse-press event, with mouse area pressed */
     @:builder var press  :Maybe<MouseButton->Void> = null;
     /** Handler for mouse-release event, with mouse area released */
-    @:builder var release:Maybe<MouseButton->Void> = null;
+    @:builder var release:Maybe<MouseButton->Bool->Void> = null;
     /** Handler for mouse-scroll event */
     @:builder var scroll :Maybe<Float->Void>  = null;
 
@@ -122,17 +122,17 @@ class Mouse implements Element<Mouse> {
     @:allow(glgui)
     function releasedLeft() {
         isPressedLeft = false;
-        getRelease().call1(MouseLeft);
+        getRelease().call2(MouseLeft, isOver);
     }
     @:allow(glgui)
     function releasedRight() {
         isPressedRight = false;
-        getRelease().call1(MouseRight);
+        getRelease().call2(MouseRight, isOver);
     }
     @:allow(glgui)
     function releasedMiddle() {
         isPressedMiddle = false;
-        getRelease().call1(MouseMiddle);
+        getRelease().call2(MouseMiddle, isOver);
     }
 
     // Element

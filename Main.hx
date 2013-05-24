@@ -10,6 +10,7 @@ import glgui.Text;
 import glgui.Panel;
 import glgui.Mouse;
 import glgui.GLFWGui;
+import glgui.PanelButton;
 
 using glgui.Transform;
 using glgui.Colour;
@@ -45,7 +46,7 @@ class Main {
             );
             gui.render(panel);
 
-            var title = cache.cache("title",
+/*            var title = cache.cache("title",
                 new Text()
                 .font(dejavu)
                 .text("Hello World!")
@@ -54,7 +55,7 @@ class Main {
                 .hex(0xff0000)
                 .commit()
             );
-            gui.render(title);
+            gui.render(title);*/
 
             var mouse = cache.cache("mouse",
                 new Mouse()
@@ -62,10 +63,51 @@ class Main {
                 .enter(function () trace("enter"))
                 .exit(function () trace("exit"))
                 .press(function (but) trace("press "+but))
-                .release(function (but) trace("release "+but))
+                .release(function (but,over) trace("release "+but+" "+over))
                 .scroll(function (delta) trace("scroll "+delta))
             );
             gui.render(mouse);
+
+            var button1 = cache.cache("button1",
+                new PanelButton(true)
+                .fit([200,200,100,30])
+                .radius(10)
+                .font(dejavu)
+                .text("Test")
+                .press(function (enabled) {
+                    trace("button1 "+enabled);
+                })
+                .disabled(true)
+                .commit()
+            );
+            gui.render(button1);
+
+            var button = cache.cache("button",
+                new PanelButton()
+                .fit([300,200,100,30])
+                .radius(10)
+                .font(dejavu)
+                .text("Test")
+                .press(function (enabled) {
+                    trace("button1 "+enabled);
+                })
+                .commit()
+            );
+            gui.render(button);
+
+            var button2 = cache.cache("button2",
+                new PanelButton(true)
+                .fit([400,200,100,30])
+                .radius(10)
+                .font(dejavu)
+                .text("Test")
+                .press(function (enabled) {
+                    trace("button2 "+enabled);
+                    button1.disabled(!enabled);
+                })
+                .commit()
+            );
+            gui.render(button2);
 
             var panel2 = cache.cache("panel2",
                 new Panel()

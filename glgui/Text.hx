@@ -73,8 +73,6 @@ class Text implements Element<Text> {
 
     // Element
     public function commit() {
-        if (getText().length == 0) return this;
-
         // Compute text textBounds, set vertex buffers.
         buffer.font = getFont();
         textBounds = buffer.set(getText(),
