@@ -44,8 +44,21 @@ class GLFWGui {
         scroll += y;
     }
     function keyCallback(_, key:Int, state:Int, _) {
+        if (state != GLFW.RELEASE) {
+            if (key == GLFW.KEY_TAB)
+                charsPressed.push('\t'.code);
+        }
+
         if (state == GLFW.PRESS)
             keysPressed.push({key:key,state:KSPress});
+        else if (state == GLFW.REPEAT) {
+            for (k in keysPressed) {
+                if (k.key == key) {
+                    k.state = KSDelayedHold;
+                    break;
+                }
+            }
+        }
         else if (state == GLFW.RELEASE) {
             for (k in keysPressed) {
                 if (k.key == key) {
@@ -74,7 +87,10 @@ class GLFWGui {
             if (k.state == KSPress)
                 keysPressed.push({key:k.key, state:KSHold});
         }
-        keysPressed = keysPressed.filter(function (k) return Type.enumEq(k.state, KSHold));
+        keysPressed = keysPressed.filter(function (k) return switch (k.state) {
+            case KSHold | KSDelayedHold: true;
+            default: false;
+        });
     }
 }
 
