@@ -9,6 +9,7 @@ import glgui.Cache;
 import glgui.Text;
 import glgui.Panel;
 import glgui.Mouse;
+import glgui.Image;
 import glgui.GLFWGui;
 import glgui.PanelButton;
 
@@ -37,6 +38,13 @@ class Main {
             GLFW.pollEvents();
             glfw.updateState(gui);
 
+            var image = cache.cache("image",
+                Image.fromPNG("background01.png")
+                .fit([0,0,800,600])
+                .commit()
+            );
+            gui.render(image);
+
             var panel = cache.cache("panel",
                 new Panel()
                 .fit([100,100,600,400])
@@ -46,7 +54,7 @@ class Main {
             );
             gui.render(panel);
 
-/*            var title = cache.cache("title",
+            var title = cache.cache("title",
                 new Text()
                 .font(dejavu)
                 .text("Hello World!")
@@ -55,7 +63,7 @@ class Main {
                 .hex(0xff0000)
                 .commit()
             );
-            gui.render(title);*/
+            gui.render(title);
 
             var mouse = cache.cache("mouse",
                 new Mouse()

@@ -4,6 +4,7 @@ import ogl.GLM;
 import gl3font.Font;
 import goodies.Builder;
 import goodies.Maybe;
+import glgui.Image;
 
 /**
  * @:noCompletion
@@ -11,6 +12,7 @@ import goodies.Maybe;
 enum GuiState {
     GSNone;
     GSText;
+    GSImage;
 }
 
 /**
@@ -18,13 +20,15 @@ enum GuiState {
  */
 class Gui implements Builder implements MaybeEnv {
     var renderState:GuiState;
-    var textRender:FontRenderer;
     var registeredMice:Array<Mouse>;
 
-    public function new() {
-        textRender = new FontRenderer();
-        renderState = GSNone;
+    var textRender:FontRenderer;
+    var imageRender:ImageRenderer;
 
+    public function new() {
+        textRender  = new FontRenderer();
+        imageRender = new ImageRenderer();
+        renderState = GSNone;
         registeredMice = [];
 
         focusLeft   = [];
@@ -36,7 +40,8 @@ class Gui implements Builder implements MaybeEnv {
      * Destroy the GUI, opengl memory released etc.
      */
     public function destroy() {
-        textRender.destroy();
+        textRender .destroy();
+        imageRender.destroy();
     }
 
     /**
@@ -46,6 +51,7 @@ class Gui implements Builder implements MaybeEnv {
     public function flush() {
         switch (renderState) {
         case GSText: textRender.end();
+        case GSImage: imageRender.end();
         case GSNone:
         }
         renderState = GSNone;
@@ -145,5 +151,16 @@ class Gui implements Builder implements MaybeEnv {
             textRender.begin();
         }
         return textRender;
+    }
+
+    public function imageRenderer() {
+        switch (renderState) {
+        case GSImage:
+        default:
+            flush();
+            renderState = GSImage;
+            imageRender.begin();
+        }
+        return imageRender;
     }
 }
