@@ -47,6 +47,8 @@ class Mouse implements Element<Mouse> {
     @:builder var scroll :Maybe<Float->Void>  = null;
 
 
+    @:builder var focus:Maybe<Void->Void> = null;
+
     /** Handler for key event (in sight) */
     /** Handler for character event (in sight) */
     @:builder var key:Maybe<Array<{key:Int,state:KeyState}>->Void> = null;

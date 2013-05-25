@@ -5,6 +5,7 @@ import gl3font.Font;
 import goodies.Builder;
 import goodies.Maybe;
 import glgui.Image;
+import glgui.LineRenderer;
 
 /**
  * @:noCompletion
@@ -13,6 +14,7 @@ enum GuiState {
     GSNone;
     GSText;
     GSImage;
+    GSLines;
 }
 
 enum KeyState {
@@ -149,16 +151,20 @@ class KeyCode {
 /**
  * GUI alpha and omega
  */
+
 class Gui implements Builder implements MaybeEnv {
     var renderState:GuiState;
     var registeredMice:Array<Mouse>;
 
     var textRender:FontRenderer;
     var imageRender:ImageRenderer;
+    var lineRender:LineRenderer;
 
     public function new() {
         textRender  = new FontRenderer();
         imageRender = new ImageRenderer();
+        lineRender  = new LineRenderer();
+
         renderState = GSNone;
         registeredMice = [];
 
@@ -175,6 +181,7 @@ class Gui implements Builder implements MaybeEnv {
     public function destroy() {
         textRender .destroy();
         imageRender.destroy();
+        lineRender .destroy();
     }
 
     /**
@@ -183,8 +190,9 @@ class Gui implements Builder implements MaybeEnv {
      */
     public function flushRender() {
         switch (renderState) {
-        case GSText: textRender.end();
+        case GSText:  textRender .end();
         case GSImage: imageRender.end();
+        case GSLines: lineRender .end();
         case GSNone:
         }
         renderState = GSNone;
@@ -215,8 +223,11 @@ class Gui implements Builder implements MaybeEnv {
         for (f in focus) {
             if (keys.length  != 0) f.getKey()      .call1(keys);
             if (chars.length != 0) f.getCharacter().call1(chars);
+            f.getFocus().call();
         }
     }
+
+    @:builder var time:Float = 0.0;
 
     /**
      * Set projection matrix for gui rendering.
@@ -322,5 +333,16 @@ class Gui implements Builder implements MaybeEnv {
             imageRender.begin();
         }
         return imageRender;
+    }
+
+    public function lineRenderer() {
+        switch (renderState) {
+        case GSLines:
+        default:
+            flushRender();
+            renderState = GSLines;
+            lineRender.begin();
+        }
+        return lineRender;
     }
 }

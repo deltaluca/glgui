@@ -74,6 +74,7 @@ class GLFWGui {
 
     public function updateState(gui:Gui) {
         gui.projection(proj)
+           .time(GLFW.getTime())
            .mouseLeft  (GLFW.getMouseButton(window, GLFW.MOUSE_BUTTON_LEFT))
            .mouseRight (GLFW.getMouseButton(window, GLFW.MOUSE_BUTTON_RIGHT))
            .mouseMiddle(GLFW.getMouseButton(window, GLFW.MOUSE_BUTTON_MIDDLE))

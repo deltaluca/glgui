@@ -44,7 +44,8 @@ class Text implements Element<Text> {
 
     var lastgui:Gui;
     var finalTransform:Mat3x2;
-    var transform:Mat3x2;
+
+    public var transform:Mat3x2;
     var buffer:StringBuffer;
 
     @:allow(glgui)
@@ -129,6 +130,31 @@ class Text implements Element<Text> {
             lineChar: c-sub,
             char: c
         };
+    }
+
+    //Text
+    // convert position to a physical position.
+    public function toPhysical(p:TextPosition) {
+        var info = getFont().info.extract();
+        var pos:Vec2 = [0, p.line*info.height];
+        var lines = textLayout.lines;
+        if (lines.length == 0) return transform * pos;
+        else {
+            var line = lines[p.line];
+            if (line.chars.length == 0) return transform * pos;
+
+            if (p.lineChar == 0) pos.x -= line.chars[0].z*0.05;
+            else if (p.lineChar >= line.chars.length) {
+                var last = line.chars[line.chars.length-1];
+                pos.x = last.x + last.z*1.05;
+            }
+            else {
+                var cpos = line.chars[p.lineChar];
+                var cpre = line.chars[p.lineChar-1];
+                pos.x = 0.5*(cpre.x + cpre.z + cpos.x);
+            }
+            return transform * pos;
+        }
     }
 
     //Text

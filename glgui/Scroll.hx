@@ -68,8 +68,19 @@ class Scroll<T> implements Element<Scroll<T>> {
                 pos.x > fit.x+fit.z || pos.y > fit.y+fit.w) mousePos = null;
             mousePos = getScroll().inverse() * (pos - new Vec2([fit.x, fit.y]));
         }
+        gui.flushRender();
         GL.scissor(Std.int(fit.x), Std.int(600-fit.y-fit.w), Std.int(fit.z), Std.int(fit.w));
         getElement().render(gui, mousePos, xform * Mat3x2.translate(fit.x, fit.y) * getScroll());
+        gui.flushRender();
+        GL.scissor(0,0, 800,600);
+    }
+
+    public function suplRender(gui:Gui, xform:Mat3x2, f:Mat3x2->Void) {
+        var fit = getFit();
+        gui.flushRender();
+        GL.scissor(Std.int(fit.x), Std.int(600-fit.y-fit.w), Std.int(fit.z), Std.int(fit.w));
+        f(xform * Mat3x2.translate(fit.x, fit.y) * getScroll());
+        gui.flushRender();
         GL.scissor(0,0, 800,600);
     }
 }

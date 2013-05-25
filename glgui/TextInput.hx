@@ -35,7 +35,17 @@ class TextInput implements Element<TextInput> {
     var textarea:Text;
     var scroll:Scroll<Text>;
     var mouse:Mouse;
+    var hasFocus:Bool;
+
+    static var linefont:Font;
+    static var buffer:StringBuffer;
     public function new() {
+        if (linefont == null) {
+            linefont = new Font(null, "line.distance.png");
+            buffer = new StringBuffer(linefont);
+            buffer.reserve(6);
+        }
+
         textarea = new Text();
         scroll = new Scroll();
         scroll.element(textarea);
@@ -58,6 +68,9 @@ class TextInput implements Element<TextInput> {
                         pointer++;
                     }
                 }
+            })
+            .focus(function () {
+                hasFocus = true;
             })
             .key(function (keys) {
                 for (k in keys) {
@@ -130,7 +143,6 @@ class TextInput implements Element<TextInput> {
                     default:
                     }
                 }
-                commit();
             });
     }
 
@@ -152,6 +164,8 @@ class TextInput implements Element<TextInput> {
     }
 
     // Element
+    public var scrollX:Float = 0;
+    public var scrollY:Float = 0;
     public function commit() {
         textarea.colour(getColour())
                 .font(getFont())
@@ -162,13 +176,60 @@ class TextInput implements Element<TextInput> {
                 .text(getText())
                 .commit();
         mouse.fit(getFit()).commit();
-        scroll.fit(getFit()).commit();
+        scroll
+            .fit(getFit())
+            .scroll(Mat3x2.translate(2+scrollX,2+scrollY))
+            .commit();
         return this;
     }
 
     // Element
     public function render(gui:Gui, mousePos:Maybe<Vec2>, xform:Mat3x2) {
+        commit();
         scroll.render(gui, null, xform);
+        scroll.suplRender(gui, xform, function (xform) {
+            var pos = textarea.toPhysical(textarea.toPosition(pointer));
+
+            var transform:Mat4 = textarea.transform;
+            var height1:Vec4 = [0, -textarea.getFont().info.extract().ascender, 0,0];
+            var height2:Vec4 = [0, -textarea.getFont().info.extract().descender, 0,0];
+            height1 = transform * height1;
+            height2 = transform * height2;
+            var c1:Vec2 = [height1.x, height1.y];
+            var c2:Vec2 = [height2.x, height2.y];
+            c1 += pos;
+            c2 += pos;
+            c1.x += scrollX;
+            c2.x += scrollX;
+
+            if (Math.cos(gui.getTime()*5)<0.5 && hasFocus) {
+                buffer.clear();
+                var d = StringBuffer.VERTEX_SIZE;
+                var index = buffer.reserve(6)-d;
+
+                buffer.vertex(index+=d, c1.x-3-scrollX,c1.y, 0,0);
+                buffer.vertex(index+=d, c2.x-3-scrollX,c2.y, 0,0);
+                buffer.vertex(index+=d, c2.x+3-scrollX,c2.y, 1,0);
+
+                buffer.vertex(index+=d, c1.x-3-scrollX,c1.y, 0,0);
+                buffer.vertex(index+=d, c2.x+3-scrollX,c2.y, 1,0);
+                buffer.vertex(index+=d, c1.x+3-scrollX,c1.y, 1,0);
+
+                gui.textRenderer()
+                    .setColour([0,0,0,1])
+                    .setTransform(xform)
+                    .render(buffer);
+            }
+
+            if (pos.x+scrollX < -2) scrollX = -2-pos.x;
+            if (scrollX > 0) scrollX = 0;
+            if (pos.x+scrollX+2 > getFit().z-4) scrollX = getFit().z-6-pos.x;
+
+            if (c1.y+scrollY < -2) scrollY = -2-c1.y;
+            if (scrollY > 0) scrollY = 0;
+            if (c2.y+scrollY+2 > getFit().w-4) scrollY = getFit().w-6-c2.y;
+        });
         mouse.render(gui, mousePos, xform);
+        hasFocus = false;
     }
 }
