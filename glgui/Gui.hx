@@ -199,15 +199,15 @@ class Gui implements Builder implements MaybeEnv {
         else sightLeft = sightLeft.filter(function (x) return x!=null);
 
         if (!getMouseLeft()) {
-            for (m in sightLeft) m.releasedLeft();
+            for (m in sightLeft) m.releasedLeft(getMousePos());
             sightLeft = [];
         }
         if (!getMouseMiddle()) {
-            for (m in sightMiddle) m.releasedMiddle();
+            for (m in sightMiddle) m.releasedMiddle(getMousePos());
             sightMiddle = [];
         }
         if (!getMouseRight()) {
-            for (m in sightRight) m.releasedRight();
+            for (m in sightRight) m.releasedRight(getMousePos());
             sightRight = [];
         }
         var keys = getKeysPressed();

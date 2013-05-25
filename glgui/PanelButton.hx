@@ -57,11 +57,11 @@ class PanelButton implements Element<PanelButton> {
             .interior(buttonBorder.internal)
             .enter  (function () buttonOver .active(false))
             .exit   (function () buttonOver .active(true ))
-            .press  (function (but) {
+            .press  (function (_, but) {
                 if (Type.enumEq(but, MouseLeft))
                     buttonPress.active(true);
             })
-            .release(function (but, over) {
+            .release(function (_, but, over) {
                 if (Type.enumEq(but, MouseLeft))
                     buttonPress.active(false);
                 if (over && !getDisabled()) {

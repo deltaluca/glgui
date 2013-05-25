@@ -4,6 +4,7 @@ import ogl.GLM;
 import gl3font.Font;
 import goodies.Builder;
 import goodies.Maybe;
+import goodies.Lazy;
 
 enum TextAlign {
     TextAlignLeft;
@@ -12,6 +13,8 @@ enum TextAlign {
     TextAlignBottom;
     TextAlignCentre;
 }
+
+typedef TextPosition = {line:Int, lineChar:Int, char:Int};
 
 /**
  * Text rendering GUI element.
@@ -27,7 +30,7 @@ class Text implements Element<Text> {
     /** Text colour */
     @:builder var colour:Vec4 = [1.0,1.0,1.0,1.0];
     /** Text GL3 Font */
-    @:builder var font:Font;
+    @:builder @:lazyVar var font:Font;
     /** Text horizontal align */
     @:builder var halign = TextAlignCentre;
     /** Text vertical align */
@@ -39,9 +42,13 @@ class Text implements Element<Text> {
     /** Text... text */
     @:builder var text:String;
 
+    var lastgui:Gui;
+    var finalTransform:Mat3x2;
     var transform:Mat3x2;
     var buffer:StringBuffer;
-    var textBounds:Vec4;
+
+    @:allow(glgui)
+    @:lazyVar var textLayout:TextLayout;
     /**
      * Optional: Instantiate text with some string.
      *           Result will be a 'static' text element whose
@@ -51,7 +58,6 @@ class Text implements Element<Text> {
         this.text(text);
         buffer = new StringBuffer(null, text.length, text.length != 0);
         transform = Mat3x2.identity();
-        textBounds = [0,0,0,0];
     }
 
     // Element
@@ -59,29 +65,155 @@ class Text implements Element<Text> {
         buffer.destroy();
     }
 
-    // Element
-    public function internal(x:Vec2):Bool {
-        var y = transform.inverse() * x;
-        y.x -= textBounds.x;
-        y.y -= textBounds.y;
-        return y.x >= 0 && y.x <= textBounds.z &&
-               y.y >= 0 && y.y <= textBounds.w;
+    //Text
+    // move position to beginning of line
+    public function toLineStart(t:TextPosition) {
+        return {
+            line : t.line,
+            char : t.char - t.lineChar,
+            lineChar : 0
+        };
+    }
+
+    //Text
+    // clamp position to text (keep line if possible).
+    public function clamp(t:TextPosition) {
+        if (t.line < 0) return {char:0, line:0, lineChar:0};
+
+        if (t.line >= textLayout.lines.length) {
+            t.lineChar = 10000000;
+            t.line = textLayout.lines.length-1;
+        }
+
+        if (t.lineChar < 0) t.lineChar = 0;
+        if (textLayout.lines.length > 0) {
+            var cline = textLayout.lines[t.line];
+            if (t.lineChar > cline.chars.length) t.lineChar = cline.chars.length;
+        }
+        else t.lineChar = t.char = 0;
+
+        // Compute actual char position based on lineChar and line
+        t.char = t.lineChar;
+        for (i in 0...t.line) t.char += textLayout.lines[i].chars.length+1;
+        return t;
+    }
+
+    //Text
+    // move to end of line
+    public function toLineEnd(t:TextPosition) {
+        var text = getText();
+        var pos = t.char;
+        while (pos < text.length && text.charCodeAt(pos) != '\n'.code) pos++;
+        return {
+            line : t.line,
+            char : pos,
+            lineChar : t.lineChar + pos - t.char
+        };
+    }
+
+    //Text
+    // get text positino from character
+    public function toPosition(c:Int) {
+        if (c < 0) return { line:0, lineChar:0, char:0 };
+        if (c > getText().length) c = getText().length;
+
+        var lines = textLayout.lines;
+        var line = 0;
+        var sub = 0;
+        while (line < lines.length && c-sub > lines[line].chars.length) {
+            sub += lines[line].chars.length+1;
+            line++;
+        }
+        return {
+            line: line,
+            lineChar: c-sub,
+            char: c
+        };
+    }
+
+    //Text
+    // Return index into string with which this Text object was last commited
+    // that given pointer would be associated with.
+    public function pointIndex(x:Vec2):TextPosition {
+        x = (finalTransform.inverse() * lastgui.getProjection()) * x;
+        // choose line.
+        var bounds = textLayout.bounds;
+        var lines = textLayout.lines;
+        var line;
+        if      (x.y <= bounds.y) line = 0;
+        else if (x.y >= bounds.y + bounds.w) line = lines.length-1;
+        else {
+            line = lines.length-1;
+            for (i in 0...lines.length-1) {
+                var l0 = lines[i];
+                var l1 = lines[i+1];
+                var dy = 0.5*(l0.bounds.y + l0.bounds.w + l1.bounds.y);
+                if (x.y <= dy) {
+                    line = i;
+                    break;
+                }
+            }
+        };
+        if (line < 0) line = 0;
+        var lineChar;
+        if (lines.length != 0) {
+            var lineLayout = lines[line];
+            var chars = lineLayout.chars;
+            bounds = lineLayout.bounds;
+            if      (x.x <= bounds.x) lineChar = 0;
+            else if (x.x >= bounds.x + bounds.z) lineChar = chars.length;
+            else {
+                lineChar = chars.length;
+                for (i in 0...chars.length) {
+                    var l = chars[i];
+                    if (x.x <= l.x + l.z*0.5) {
+                        lineChar = i;
+                        break;
+                    }
+                }
+            };
+        }
+        else {
+            lineChar = 0;
+        }
+
+        var char = lineChar;
+        for (i in 0...line) char += lines[i].chars.length+1; // +1 for \n character in string.
+
+        return {
+            line: line,
+            lineChar: lineChar,
+            char: char
+        };
     }
 
     // Element
-    public function bounds():Maybe<Vec4> return textBounds;
+    public function internal(x:Vec2):Bool {
+        var y = transform.inverse() * x;
+        for (l in textLayout.lines) {
+            for (c in l.chars) {
+                y.x -= c.x;
+                y.y -= c.y;
+                if (y.x >= 0 && y.x <= c.z && y.y >= 0 && y.y <= c.w) return true;
+            }
+        }
+        return false;
+    }
+
+    // Element
+    public function bounds():Maybe<Vec4> return textLayout.bounds;
 
     // Element
     public function commit() {
-        // Compute text textBounds, set vertex buffers.
+        // Compute text textLayout, set vertex buffers.
         buffer.font = getFont();
-        textBounds = buffer.set(getText(),
+        textLayout = buffer.set(getText(),
             switch (getHalign()) {
                 case TextAlignLeft:  getJustified() ? AlignLeftJustified   : AlignLeft;
                 case TextAlignRight: getJustified() ? AlignRightJustified  : AlignRight;
                 default:             getJustified() ? AlignCentreJustified : AlignCentre;
-            });
-
+            }, true).extract();
+        var textBounds = textLayout.bounds;
         // Determine text scaling.
         var scale = if (getSize() > 0.0) getSize()
             else Math.min(getFit().z / textBounds.z, getFit().w / textBounds.w);
@@ -106,9 +238,10 @@ class Text implements Element<Text> {
 
     // Element
     public function render(gui:Gui, _, xform:Mat3x2) {
+        lastgui = gui;
         gui.textRenderer()
             .setColour(getColour())
-            .setTransform(xform * transform)
+            .setTransform(finalTransform = xform * transform)
             .render(buffer);
     }
 }

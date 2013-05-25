@@ -10,8 +10,10 @@ import glgui.Text;
 import glgui.Panel;
 import glgui.Mouse;
 import glgui.Image;
+import glgui.Scroll;
 import glgui.GLFWGui;
 import glgui.PanelButton;
+import glgui.TextInput;
 
 using glgui.Transform;
 using glgui.Colour;
@@ -25,6 +27,7 @@ class Main {
 
         GL.init();
         GL.viewport(0, 0, 800, 600);
+        GL.enable(GL.SCISSOR_TEST);
         GL.enable(GL.BLEND);
         GL.blendFunc(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA);
 
@@ -52,14 +55,24 @@ class Main {
                 .radius(100)
                 .commit()
             );
-            gui.render(panel);
+            var scroll = cache.cache("scroll",
+                new Scroll()
+                .fit([300,200,100,100])
+                .element(panel)
+                .commit()
+            );
+            var mouseX = GLFW.getCursorPos(w).x;
+            var mouseY = GLFW.getCursorPos(w).y;
+            scroll.scroll(Mat3x2.translate(-mouseX, -mouseY));
+            gui.render(scroll);
 
             var title = cache.cache("title",
                 new Text()
                 .font(dejavu)
-                .text("Hello World!")
+                .text("AB\n\nC\nD")
                 .size(30)
                 .position([400,300])
+//                .position([0,0])
                 .hex(0xff0000)
                 .commit()
             );
@@ -67,18 +80,21 @@ class Main {
 
             var mouse = cache.cache("mouse",
                 new Mouse()
-                .interior(panel.internal)
-                .enter(function () trace("enter"))
-                .exit(function () trace("exit"))
-                .press(function (but) trace("press "+but))
-                .release(function (but,over) trace("release "+but+" "+over))
-                .scroll(function (delta) trace("scroll "+delta))
+                .interior(image.internal)
+//                .enter(function () trace("enter"))
+//                .exit(function () trace("exit"))
+                .press(function (pos, but) {
+//                    trace("press "+but);
+                    trace(title.pointIndex(GLFW.getCursorPos(w)));
+                })
+//                .release(function (but,over) trace("release "+but+" "+over))
+//                .scroll(function (delta) trace("scroll "+delta))
 //                .character(function (chars) trace("chars "+chars))
-                .key(function (keys) trace("keys "+keys))
+//                .key(function (keys) trace("keys "+keys))
             );
             gui.render(mouse);
 
-            var button1 = cache.cache("button1",
+ /*           var button1 = cache.cache("button1",
                 new PanelButton(true)
                 .fit([200,200,100,30])
                 .radius(0)
@@ -126,7 +142,27 @@ class Main {
                 .radius(50)
                 .commit()
             );
+            gui.render(panel2);*/
+
+            var panel2 = cache.cache("panel2",
+                new Panel()
+                .fit([100-3,100-3,200+6,90+6])
+                .hex(0xffffff)
+                .radius(2)
+                .commit()
+            );
             gui.render(panel2);
+
+            var input = cache.cache("input", new TextInput()
+                .font(dejavu)
+                .size(20)
+                .hex(0)
+                .fit([100,100,200,90])
+                .text("AB\nCD\nEF")
+                .allowed(~/[0-9.\-]/)
+                .commit()
+            );
+            gui.render(input);
 
             gui.flush();
             GLFW.swapBuffers(w);
