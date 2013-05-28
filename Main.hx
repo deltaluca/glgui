@@ -181,14 +181,20 @@ class Main {
 ////            );
 ////            gui.render(panel2);
 ////
+            var t:GLString = GLString.make("cwd=..", [1,1,1,1]);
+            t += "\n   ";
+            t += "hello";
+            t += "\n   ";
+            t += "hiya";
             var input = cache.cache("input", new TextInput()
                 .fileInput(true)
                 .font(dejavu)
                 .size(20)
                 .hex(0xffffff)
                 .fit([0,0,550,400])
+                .text(t)
 //                .text(GLString.make("AB\nCD\nEF", [1,1,1,1]))
-                .multiline(false)
+                .multiline(true)
 //                .allowed(~/[0-9.\-]/)
                 .commit()
             );

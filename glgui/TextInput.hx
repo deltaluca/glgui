@@ -42,6 +42,14 @@ class TextInput implements Element<TextInput> {
 
     function tabComplete(inp:GLString) {
         var x = inp;
+        if (x.charCodeAt(0) == '~'.code) {
+            if (x.length == 1) {
+                x = Sys.getEnv("HOME");
+                x = x.normalise(inp.colourAt(0));
+            }
+            else
+                x = Sys.getEnv("HOME") + x.substr(1);
+        }
         if (x.length == 0 || (x.charCodeAt(0) != '/'.code && x.charCodeAt(0) != '.'.code)) {
             if (x.length == 0) x = GLString.make("./", getColour());
             else x = "./" + x;
@@ -55,7 +63,7 @@ class TextInput implements Element<TextInput> {
             if (matches.length == 1) {
                 x = pre + "/" + matches[0];
                 if (sys.FileSystem.isDirectory(x.toString())) x += "/";
-                getMatches().call1([]);
+                getMatches().call1([x.toString()]);
             }else {
                 var cnt = 0;
                 for (i in 0...100000) {
@@ -72,7 +80,12 @@ class TextInput implements Element<TextInput> {
                 x = pre + "/" + matches[0].substr(0,cnt);
                 getMatches().call1(matches);
             }
-        }else getMatches().call1([]);
+        }else {
+            if (sys.FileSystem.exists(inp.toString()))
+                getMatches().call1([inp.toString()])
+            else
+                getMatches().call1([]);
+        }
         if (x.length < inp.length) return inp;
         pointer = x.length;
         return x;
