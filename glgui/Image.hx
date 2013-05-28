@@ -157,6 +157,8 @@ class ImageRenderer {
     public function begin() {
         GL.useProgram(program);
         GL.enableVertexAttribArray(0);
+        GL.bindBuffer(GL.ARRAY_BUFFER, vertexBuffer);
+        GL.vertexAttribPointer(0, 2, GL.FLOAT, false);
         return this;
     }
 
@@ -167,8 +169,6 @@ class ImageRenderer {
 
     public function render(im:Image) {
         GL.bindTexture(GL.TEXTURE_2D, im.getTexture());
-        GL.bindBuffer(GL.ARRAY_BUFFER, vertexBuffer);
-        GL.vertexAttribPointer(0, 2, GL.FLOAT, false);
         GL.drawArrays(GL.TRIANGLES, 0, 6);
         return this;
     }

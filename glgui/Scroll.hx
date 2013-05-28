@@ -150,7 +150,7 @@ class Scroll<T> implements Element<Scroll<T>> {
                 tmousePos = stransform().inverse() * (pos - new Vec2([fit.x, fit.y]));
         }
         gui.flushRender();
-        gui.pushScissor(fit);
+        gui.pushScissor(xform * fit);
         getElement().render(gui, tmousePos, proj, xform * Mat3x2.translate(fit.x, fit.y) * stransform());
         gui.flushRender();
         gui.popScissor();
@@ -210,7 +210,7 @@ class Scroll<T> implements Element<Scroll<T>> {
     public function suplRender(gui:Gui, xform:Mat3x2, f:Mat3x2->Void) {
         var fit = getFit();
         gui.flushRender();
-        gui.pushScissor(fit);
+        gui.pushScissor(xform * fit);
         f(xform * Mat3x2.translate(fit.x, fit.y) * stransform());
         gui.flushRender();
         gui.popScissor();

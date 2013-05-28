@@ -6,7 +6,7 @@ import gl3font.Font;
 import goodies.Builder;
 import goodies.Maybe;
 import glgui.Image;
-import glgui.LineRenderer;
+import glgui.Drawing;
 
 /**
  * @:noCompletion
@@ -15,7 +15,7 @@ enum GuiState {
     GSNone;
     GSText;
     GSImage;
-    GSLines;
+    GSDrawing;
 }
 
 enum KeyState {
@@ -159,12 +159,12 @@ class Gui implements Builder implements MaybeEnv {
 
     var textRender:FontRenderer;
     var imageRender:ImageRenderer;
-    var lineRender:LineRenderer;
+    var drawing:Drawing;
 
     public function new() {
         textRender  = new FontRenderer();
         imageRender = new ImageRenderer();
-        lineRender  = new LineRenderer();
+        drawing  = new Drawing();
 
         renderState = GSNone;
         registeredMice = [];
@@ -183,7 +183,7 @@ class Gui implements Builder implements MaybeEnv {
     public function destroy() {
         textRender .destroy();
         imageRender.destroy();
-        lineRender .destroy();
+        drawing .destroy();
     }
 
     /**
@@ -194,7 +194,7 @@ class Gui implements Builder implements MaybeEnv {
         switch (renderState) {
         case GSText:  textRender .end();
         case GSImage: imageRender.end();
-        case GSLines: lineRender .end();
+        case GSDrawing: drawing  .end();
         case GSNone:
         }
         renderState = GSNone;
@@ -324,6 +324,9 @@ class Gui implements Builder implements MaybeEnv {
         }
     }
 
+    public function projection()
+        return Mat3x2.viewportMap(getScreen().x, getScreen().y);
+
     @:allow(glgui)
     function registerMouse(x:Mouse) {
         registeredMice.push(x);
@@ -355,14 +358,14 @@ class Gui implements Builder implements MaybeEnv {
         return imageRender;
     }
 
-    public function lineRenderer() {
+    public function drawings() {
         switch (renderState) {
-        case GSLines:
+        case GSDrawing:
         default:
             flushRender();
-            renderState = GSLines;
-            lineRender.begin();
+            renderState = GSDrawing;
+            drawing.begin();
         }
-        return lineRender;
+        return drawing;
     }
 }

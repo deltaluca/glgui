@@ -340,6 +340,10 @@ class Main {
             );
             gui.render(scroll2);
 
+            var drawing = gui.drawings();
+            drawing.setTransform(gui.projection());
+            drawing.drawLine([0,0], [550,400], [1,1,1,1]);
+
             gui.flush();
             debug.flush();
 
