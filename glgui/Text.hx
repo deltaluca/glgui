@@ -41,6 +41,8 @@ class Text implements Element<Text> {
     /** Text... text */
     @:builder var text:GLString;
 
+    @:builder var spacing:Maybe<Float> = null;
+
     var lastgui:Gui;
     var finalTransform:Mat3x2;
 
@@ -163,6 +165,7 @@ class Text implements Element<Text> {
     //Text
     // Return index into string with which this Text object was last commited
     // that given pointer would be associated with.
+    // point given in screen coordinates, not local coords.
     public function pointIndex(x:Vec2):TextPosition {
         x = finalTransform.inverse() * x;
         // choose line.
@@ -216,7 +219,7 @@ class Text implements Element<Text> {
 
     // Element
     public function bounds():Maybe<Vec4> {
-        return finalTransform * textLayout.bounds;
+        return transform * textLayout.bounds;
     }
 
     // Element
@@ -228,7 +231,7 @@ class Text implements Element<Text> {
                 case TextAlignLeft:  getJustified() ? AlignLeftJustified   : AlignLeft;
                 case TextAlignRight: getJustified() ? AlignRightJustified  : AlignRight;
                 default:             getJustified() ? AlignCentreJustified : AlignCentre;
-            }, true).extract();
+            }, getSpacing(), true).extract();
         var textBounds = textLayout.bounds;
         // Determine text scaling.
         var scale = if (getSize() > 0.0) getSize()

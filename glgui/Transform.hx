@@ -8,4 +8,18 @@ class Transform {
         var fit = x.getFit();
         return x.fit([pos.x,pos.y,fit.z,fit.w]);
     }
+
+    @:allow(ogl)
+    public inline static function posx<T>(x:Element<T>, f:Float):T {
+        var fit = x.getFit();
+        fit.x = f;
+        return x.fit(fit);
+    }
+
+    @:allow(ogl)
+    public inline static function posy<T>(x:Element<T>, f:Float):T {
+        var fit = x.getFit();
+        fit.y = f;
+        return x.fit(fit);
+    }
 }

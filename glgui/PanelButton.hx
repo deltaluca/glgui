@@ -28,16 +28,17 @@ class PanelButton implements Element<PanelButton> {
     @:builder var toggled = false;
 
     @:builder var font:Font;
-    @:builder var text:GLString;
-    @:builder var disabledText:GLString;
+    @:builder var text:GLString = "";
+    @:builder var disabledText:GLString = "";
     @:builder var size:Int = -1;
 
     @:builder var colour      :Vec4 = [0.1,0.1,0.1,1.0];
     @:builder var borderColour:Vec4 = [0.3,0.3,0.3,1.0];
-    @:builder var overColour  :Vec4 = [0.0,0.0,0.0,0.2];
+    @:builder var overColour  :Vec4 = [1.0,1.0,1.0,0.2];
     @:builder var pressColour :Vec4 = [0.5,0.5,0.5,1.0];
 
     @:builder var press:Maybe<Bool->Void>;
+    @:builder var drag:Maybe<Maybe<Vec2>->Void>;
 
     // Sub elements
     var buttonBorder:Panel;
@@ -86,7 +87,7 @@ class PanelButton implements Element<PanelButton> {
 
     // Element
     public function bounds():Maybe<Vec4> {
-        return buttonBorder.bounds();
+        return getFit();
     }
 
     // Element
@@ -119,14 +120,15 @@ class PanelButton implements Element<PanelButton> {
             .colour(getOverColour())
             .radius(r)
             .commit();
-        buttonText
-            .fit(fit + new Vec4([t+0.5*r,t+0.5*r,-(t+0.5*r)*2,-(t+0.5*r)*2]))
-            .font(getFont())
-            .text(getText())
-            .halign(TextAlignCentre)
-            .valign(TextAlignCentre)
-            .size(getSize())
-            .commit();
+        if (getText().length != 0)
+            buttonText
+                .fit(fit + new Vec4([t+0.5*r,t+0.5*r,-(t+0.5*r)*2,-(t+0.5*r)*2]))
+                .font(getFont())
+                .text(getText())
+                .halign(TextAlignCentre)
+                .valign(TextAlignCentre)
+                .size(getSize())
+                .commit();
         return this;
     }
 
@@ -141,16 +143,21 @@ class PanelButton implements Element<PanelButton> {
 
         buttonMiddle.render(gui, mousePos, proj, xform);
 
-        buttonText.text(getText());
-        if (getDisabled()) buttonText.text(getDisabledText());
-        if (toggleButton)
-            buttonText.text(getToggled() ? getText() : getDisabledText());
-        buttonText.commit().render(gui, mousePos, proj, xform);
+        if (getText().length != 0) {
+            buttonText.text(getText());
+            if (getDisabled()) buttonText.text(getDisabledText());
+            if (toggleButton)
+                buttonText.text(getToggled() ? getText() : getDisabledText());
+            buttonText.commit().render(gui, mousePos, proj, xform);
+        }
 
         if (getDisabled()) buttonOver.active(false);
         if (buttonOver.getActive())
             buttonOver  .render(gui, mousePos, proj, xform);
 
         buttonMouse .render(gui, mousePos, proj, xform);
+
+        if (buttonMouse.isPressedLeft)
+            getDrag().call1(cast mousePos);
     }
 }

@@ -240,7 +240,7 @@ class TextInput implements Element<TextInput> {
         mouse.fit(getFit()).commit();
         scroll
             .fit(getFit())
-            .scroll(Mat3x2.translate(3+scrollX,3+scrollY))
+            .scroll([3+scrollX, 3+scrollY])
             .commit();
         return this;
     }

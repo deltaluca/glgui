@@ -43,6 +43,8 @@ class Mouse implements Element<Mouse> {
     @:builder var press  :Maybe<Maybe<Vec2>->MouseButton->Void> = null;
     /** Handler for mouse-release event, with mouse area released */
     @:builder var release:Maybe<Maybe<Vec2>->MouseButton->Bool->Void> = null;
+    /** Handler for mouse-over event, wtith mouse position */
+    @:builder var over:Maybe<Maybe<Vec2>->Void> = null;
     /** Handler for mouse-scroll event */
     @:builder var scroll :Maybe<Float->Void>  = null;
 
@@ -104,6 +106,7 @@ class Mouse implements Element<Mouse> {
             isOver = true;
             getEnter().call();
         }
+        getOver().call1(cast gui.getMousePos());
         if (!isPressedLeft && gui.mouseWasPressedLeft) {
             isPressedLeft = true;
             getPress().call2(cast gui.getMousePos(), MouseLeft);
