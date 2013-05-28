@@ -2,6 +2,7 @@ package glgui;
 
 import ogl.GLM;
 import gl3font.Font;
+import gl3font.GLString;
 import goodies.Builder;
 import goodies.Maybe;
 import goodies.Lazy;
@@ -27,8 +28,6 @@ class Text implements Element<Text> {
     @:builder var occluder = false;
 
     // Text
-    /** Text colour */
-    @:builder var colour:Vec4 = [1.0,1.0,1.0,1.0];
     /** Text GL3 Font */
     @:builder @:lazyVar var font:Font;
     /** Text horizontal align */
@@ -40,7 +39,7 @@ class Text implements Element<Text> {
     /** Font pixel size (<=0 -> fixed aspect scaling to fill 'fit') */
     @:builder var size = 0.0;
     /** Text... text */
-    @:builder var text:String;
+    @:builder var text:GLString;
 
     var lastgui:Gui;
     var finalTransform:Mat3x2;
@@ -55,9 +54,13 @@ class Text implements Element<Text> {
      *           Result will be a 'static' text element whose
      *           text should not be changed anymore.
      */
-    public function new(text:String="") {
-        this.text(text);
-        buffer = new StringBuffer(null, text.length, text.length != 0);
+    public function new(text:Maybe<GLString>=null) {
+        if (text != null) {
+            var text = text.extract();
+            this.text(text);
+            buffer = new StringBuffer(null, text.length, true);
+        }
+        else buffer = new StringBuffer(null, 0, false);
         transform = Mat3x2.identity();
     }
 
@@ -143,15 +146,15 @@ class Text implements Element<Text> {
             var line = lines[p.line];
             if (line.chars.length == 0) return transform * pos;
 
-            if (p.lineChar == 0) pos.x -= line.chars[0].z*0.05;
+            if (p.lineChar == 0) pos.x -= line.chars[0].y*0.05;
             else if (p.lineChar >= line.chars.length) {
                 var last = line.chars[line.chars.length-1];
-                pos.x = last.x + last.z*1.05;
+                pos.x = last.x + last.y*1.05;
             }
             else {
                 var cpos = line.chars[p.lineChar];
                 var cpre = line.chars[p.lineChar-1];
-                pos.x = 0.5*(cpre.x + cpre.z + cpos.x);
+                pos.x = 0.5*(cpre.x + cpre.y + cpos.x);
             }
             return transform * pos;
         }
@@ -161,38 +164,31 @@ class Text implements Element<Text> {
     // Return index into string with which this Text object was last commited
     // that given pointer would be associated with.
     public function pointIndex(x:Vec2):TextPosition {
-        x = (finalTransform.inverse() * lastgui.getProjection()) * x;
+        x = finalTransform.inverse() * x;
         // choose line.
         var bounds = textLayout.bounds;
         var lines = textLayout.lines;
-        var line;
+        var info = getFont().info.extract();
+        var line = Std.int((x.y - bounds.y) / info.height);
         if      (x.y <= bounds.y) line = 0;
         else if (x.y >= bounds.y + bounds.w) line = lines.length-1;
         else {
-            line = lines.length-1;
-            for (i in 0...lines.length-1) {
-                var l0 = lines[i];
-                var l1 = lines[i+1];
-                var dy = 0.5*(l0.bounds.y + l0.bounds.w + l1.bounds.y);
-                if (x.y <= dy) {
-                    line = i;
-                    break;
-                }
-            }
-        };
-        if (line < 0) line = 0;
+            if (line < 0) line = 0;
+            if (line >= lines.length) line = lines.length-1;
+        }
+
         var lineChar;
         if (lines.length != 0) {
             var lineLayout = lines[line];
             var chars = lineLayout.chars;
-            bounds = lineLayout.bounds;
+            var bounds = lineLayout.bounds;
             if      (x.x <= bounds.x) lineChar = 0;
-            else if (x.x >= bounds.x + bounds.z) lineChar = chars.length;
+            else if (x.x >= bounds.x + bounds.y) lineChar = chars.length;
             else {
                 lineChar = chars.length;
                 for (i in 0...chars.length) {
                     var l = chars[i];
-                    if (x.x <= l.x + l.z*0.5) {
+                    if (x.x <= l.x + l.y*0.5) {
                         lineChar = i;
                         break;
                     }
@@ -215,19 +211,13 @@ class Text implements Element<Text> {
 
     // Element
     public function internal(x:Vec2):Bool {
-        var y = transform.inverse() * x;
-        for (l in textLayout.lines) {
-            for (c in l.chars) {
-                y.x -= c.x;
-                y.y -= c.y;
-                if (y.x >= 0 && y.x <= c.z && y.y >= 0 && y.y <= c.w) return true;
-            }
-        }
         return false;
     }
 
     // Element
-    public function bounds():Maybe<Vec4> return textLayout.bounds;
+    public function bounds():Maybe<Vec4> {
+        return finalTransform * textLayout.bounds;
+    }
 
     // Element
     public function commit() {
@@ -263,11 +253,10 @@ class Text implements Element<Text> {
     }
 
     // Element
-    public function render(gui:Gui, _, xform:Mat3x2) {
+    public function render(gui:Gui, _, proj:Mat3x2, xform:Mat3x2) {
         lastgui = gui;
         gui.textRenderer()
-            .setColour(getColour())
-            .setTransform(finalTransform = xform * transform)
+            .setTransform(proj * (finalTransform = xform * transform))
             .render(buffer);
     }
 }

@@ -73,7 +73,7 @@ class Image implements Element<Image> {
     }
 
     // Element
-    public function render(gui:Gui, _, xform:Mat3x2) {
+    public function render(gui:Gui, _, proj:Mat3x2, xform:Mat3x2) {
         var fit = getFit();
         var transform:Mat3x2 = [
             fit.z,   0,
@@ -81,7 +81,7 @@ class Image implements Element<Image> {
             fit.x, fit.y
         ];
         gui.imageRenderer()
-            .setTransform(xform * transform)
+            .setTransform(proj * xform * transform)
             .render(this);
     }
 }

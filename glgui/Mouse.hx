@@ -153,7 +153,7 @@ class Mouse implements Element<Mouse> {
     }
 
     // Element
-    public function render(gui:Gui, mousePos:Maybe<Vec2>, _) {
+    public function render(gui:Gui, mousePos:Maybe<Vec2>, _, _) {
         if (mousePos.runOr(internal, false)) gui.registerMouse(this);
         else outside(gui);
     }

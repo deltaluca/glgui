@@ -5,6 +5,7 @@ import gl3font.Font;
 import goodies.Builder;
 import goodies.Maybe;
 import goodies.Lazy;
+import cpp.vm.Tls;
 
 /**
  * Rounded rectangular panel GUI element.
@@ -23,10 +24,11 @@ class Panel implements Element<Panel> {
     @:builder var colour:Vec4 = [1.0,1.0,1.0,1.0];
 
     // Abuse GL3Font for this.
-    @:lazyVar static var font:Font = new Font(null, "quarter_circle.distance.png");
+    @:lazyVar static var font:Tls<Font> = new Tls<Font>();
     var buffer:StringBuffer;
     public function new() {
-        buffer = new StringBuffer(font, 9, true);
+        if (font.value == null) font.value = new Font(null, "quarter_circle.distance.png");
+        buffer = new StringBuffer(font.value, 9, true);
     }
 
     // Element
@@ -82,86 +84,87 @@ class Panel implements Element<Panel> {
         var x1 = x0 + fit.z;
         var y1 = y0 + fit.w;
 
+        var col = getColour();
+
         // top-left
-        buffer.vertex(index+=d, x0,  y0,   t,t);
-        buffer.vertex(index+=d, x0+r,y0,   1,t);
-        buffer.vertex(index+=d, x0+r,y0+r, 1,1);
-        buffer.vertex(index+=d, x0,  y0,   t,t);
-        buffer.vertex(index+=d, x0+r,y0+r, 1,1);
-        buffer.vertex(index+=d, x0  ,y0+r, t,1);
+        buffer.vertex(index+=d, x0,  y0,   t,t, col);
+        buffer.vertex(index+=d, x0+r,y0,   1,t, col);
+        buffer.vertex(index+=d, x0+r,y0+r, 1,1, col);
+        buffer.vertex(index+=d, x0,  y0,   t,t, col);
+        buffer.vertex(index+=d, x0+r,y0+r, 1,1, col);
+        buffer.vertex(index+=d, x0  ,y0+r, t,1, col);
 
         // top-right
-        buffer.vertex(index+=d, x1-r,y0,   1,t);
-        buffer.vertex(index+=d, x1,  y0,   t,t);
-        buffer.vertex(index+=d, x1,  y0+r, t,1);
-        buffer.vertex(index+=d, x1-r,y0,   1,t);
-        buffer.vertex(index+=d, x1,  y0+r, t,1);
-        buffer.vertex(index+=d, x1-r,y0+r, 1,1);
+        buffer.vertex(index+=d, x1-r,y0,   1,t, col);
+        buffer.vertex(index+=d, x1,  y0,   t,t, col);
+        buffer.vertex(index+=d, x1,  y0+r, t,1, col);
+        buffer.vertex(index+=d, x1-r,y0,   1,t, col);
+        buffer.vertex(index+=d, x1,  y0+r, t,1, col);
+        buffer.vertex(index+=d, x1-r,y0+r, 1,1, col);
 
         // bottom-left
-        buffer.vertex(index+=d, x0,  y1-r, t,1);
-        buffer.vertex(index+=d, x0+r,y1-r, 1,1);
-        buffer.vertex(index+=d, x0+r,y1,   1,t);
-        buffer.vertex(index+=d, x0,  y1-r, t,1);
-        buffer.vertex(index+=d, x0+r,y1,   1,t);
-        buffer.vertex(index+=d, x0  ,y1,   t,t);
+        buffer.vertex(index+=d, x0,  y1-r, t,1, col);
+        buffer.vertex(index+=d, x0+r,y1-r, 1,1, col);
+        buffer.vertex(index+=d, x0+r,y1,   1,t, col);
+        buffer.vertex(index+=d, x0,  y1-r, t,1, col);
+        buffer.vertex(index+=d, x0+r,y1,   1,t, col);
+        buffer.vertex(index+=d, x0  ,y1,   t,t, col);
 
         // bottom-right
-        buffer.vertex(index+=d, x1-r,y1-r, 1,1);
-        buffer.vertex(index+=d, x1,  y1-r, t,1);
-        buffer.vertex(index+=d, x1,  y1,   t,t);
-        buffer.vertex(index+=d, x1-r,y1-r, 1,1);
-        buffer.vertex(index+=d, x1,  y1,   t,t);
-        buffer.vertex(index+=d, x1-r,y1,   1,t);
+        buffer.vertex(index+=d, x1-r,y1-r, 1,1, col);
+        buffer.vertex(index+=d, x1,  y1-r, t,1, col);
+        buffer.vertex(index+=d, x1,  y1,   t,t, col);
+        buffer.vertex(index+=d, x1-r,y1-r, 1,1, col);
+        buffer.vertex(index+=d, x1,  y1,   t,t, col);
+        buffer.vertex(index+=d, x1-r,y1,   1,t, col);
 
         // top
-        buffer.vertex(index+=d, x0+r,y0,   1,t);
-        buffer.vertex(index+=d, x1-r,y0,   1,t);
-        buffer.vertex(index+=d, x1-r,y0+r, 1,1);
-        buffer.vertex(index+=d, x0+r,y0,   1,t);
-        buffer.vertex(index+=d, x1-r,y0+r, 1,1);
-        buffer.vertex(index+=d, x0+r,y0+r, 1,1);
+        buffer.vertex(index+=d, x0+r,y0,   1,t, col);
+        buffer.vertex(index+=d, x1-r,y0,   1,t, col);
+        buffer.vertex(index+=d, x1-r,y0+r, 1,1, col);
+        buffer.vertex(index+=d, x0+r,y0,   1,t, col);
+        buffer.vertex(index+=d, x1-r,y0+r, 1,1, col);
+        buffer.vertex(index+=d, x0+r,y0+r, 1,1, col);
 
         // bottom
-        buffer.vertex(index+=d, x0+r,y1-r, 1,1);
-        buffer.vertex(index+=d, x1-r,y1-r, 1,1);
-        buffer.vertex(index+=d, x1-r,y1,   1,t);
-        buffer.vertex(index+=d, x0+r,y1-r, 1,1);
-        buffer.vertex(index+=d, x1-r,y1,   1,t);
-        buffer.vertex(index+=d, x0+r,y1,   1,t);
+        buffer.vertex(index+=d, x0+r,y1-r, 1,1, col);
+        buffer.vertex(index+=d, x1-r,y1-r, 1,1, col);
+        buffer.vertex(index+=d, x1-r,y1,   1,t, col);
+        buffer.vertex(index+=d, x0+r,y1-r, 1,1, col);
+        buffer.vertex(index+=d, x1-r,y1,   1,t, col);
+        buffer.vertex(index+=d, x0+r,y1,   1,t, col);
 
         // left
-        buffer.vertex(index+=d, x0,  y0+r, t,1);
-        buffer.vertex(index+=d, x0+r,y0+r, 1,1);
-        buffer.vertex(index+=d, x0+r,y1-r, 1,1);
-        buffer.vertex(index+=d, x0,  y0+r, t,1);
-        buffer.vertex(index+=d, x0+r,y1-r, 1,1);
-        buffer.vertex(index+=d, x0,  y1-r, t,1);
+        buffer.vertex(index+=d, x0,  y0+r, t,1, col);
+        buffer.vertex(index+=d, x0+r,y0+r, 1,1, col);
+        buffer.vertex(index+=d, x0+r,y1-r, 1,1, col);
+        buffer.vertex(index+=d, x0,  y0+r, t,1, col);
+        buffer.vertex(index+=d, x0+r,y1-r, 1,1, col);
+        buffer.vertex(index+=d, x0,  y1-r, t,1, col);
 
         // right
-        buffer.vertex(index+=d, x1-r,y0+r, 1,1);
-        buffer.vertex(index+=d, x1,  y0+r, t,1);
-        buffer.vertex(index+=d, x1,  y1-r, t,1);
-        buffer.vertex(index+=d, x1-r,y0+r, 1,1);
-        buffer.vertex(index+=d, x1,  y1-r, t,1);
-        buffer.vertex(index+=d, x1-r,y1-r, 1,1);
+        buffer.vertex(index+=d, x1-r,y0+r, 1,1, col);
+        buffer.vertex(index+=d, x1,  y0+r, t,1, col);
+        buffer.vertex(index+=d, x1,  y1-r, t,1, col);
+        buffer.vertex(index+=d, x1-r,y0+r, 1,1, col);
+        buffer.vertex(index+=d, x1,  y1-r, t,1, col);
+        buffer.vertex(index+=d, x1-r,y1-r, 1,1, col);
 
         // middle
-        buffer.vertex(index+=d, x0+r,y0+r, 1,1);
-        buffer.vertex(index+=d, x1-r,y0+r, 1,1);
-        buffer.vertex(index+=d, x1-r,y1-r, 1,1);
-        buffer.vertex(index+=d, x0+r,y0+r, 1,1);
-        buffer.vertex(index+=d, x1-r,y1-r, 1,1);
-        buffer.vertex(index+=d, x0+r,y1-r, 1,1);
+        buffer.vertex(index+=d, x0+r,y0+r, 1,1, col);
+        buffer.vertex(index+=d, x1-r,y0+r, 1,1, col);
+        buffer.vertex(index+=d, x1-r,y1-r, 1,1, col);
+        buffer.vertex(index+=d, x0+r,y0+r, 1,1, col);
+        buffer.vertex(index+=d, x1-r,y1-r, 1,1, col);
+        buffer.vertex(index+=d, x0+r,y1-r, 1,1, col);
 
         return this;
     }
 
     // Element
-    public function render(gui:Gui, _, xform:Mat3x2) {
+    public function render(gui:Gui, _, proj:Mat3x2, xform:Mat3x2) {
         gui.textRenderer()
-            .setColour(getColour())
-            .setTransform(xform)
+            .setTransform(proj * xform)
             .render(buffer);
     }
 }

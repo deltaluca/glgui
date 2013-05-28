@@ -11,7 +11,6 @@ class GLFWGui {
     public var window   (default,null):Window;
     public var mouseOver(default,null):Bool;
 
-    var proj:Mat3x2;
     var scroll:Float;
 
     var keysPressed:Array<{key:Int,state:KeyState}>;
@@ -27,7 +26,6 @@ class GLFWGui {
                  && xy.x < pos.x+size.width
                  && xy.y < pos.y+size.height;
         scroll = 0;
-        proj = Mat3x2.viewportMap(size.width, size.height);
         GLFW.setCursorEnterCallback(window, enterCallback);
         GLFW.setScrollCallback(window, scrollCallback);
 
@@ -45,7 +43,7 @@ class GLFWGui {
     }
     function keyCallback(_, key:Int, state:Int, _) {
         if (state != GLFW.RELEASE) {
-            if (key == GLFW.KEY_TAB)
+            if (key == GLFW.TAB)
                 charsPressed.push('\t'.code);
         }
 
@@ -73,7 +71,8 @@ class GLFWGui {
     }
 
     public function updateState(gui:Gui) {
-        gui.projection(proj)
+        var size = GLFW.getWindowSize(window);
+        gui.screen([size.width, size.height])
            .time(GLFW.getTime())
            .mouseLeft  (GLFW.getMouseButton(window, GLFW.MOUSE_BUTTON_LEFT))
            .mouseRight (GLFW.getMouseButton(window, GLFW.MOUSE_BUTTON_RIGHT))

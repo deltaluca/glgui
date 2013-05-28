@@ -28,22 +28,7 @@ class Scroll<T> implements Element<Scroll<T>> {
 
     // Element
     public function bounds():Maybe<Vec4> {
-        var bounds = getElement().bounds();
-        if (bounds == null) return null;
-
-        var fit = getFit();
-        var bounds = getScroll() * bounds.extract();
-        bounds.x += fit.x;
-        bounds.y += fit.y;
-
-        // intersectino of element bounds (after sub-transform) and bounds.
-        var x = Math.max(fit.x, bounds.x);
-        var y = Math.max(fit.y, bounds.y);
-        return [
-            x, y,
-            Math.min(fit.x+fit.z, bounds.x+bounds.z) - x,
-            Math.min(fit.y+fit.w, bounds.y+bounds.w) - y
-        ];
+        return getFit();
     }
 
     // Element
@@ -60,7 +45,7 @@ class Scroll<T> implements Element<Scroll<T>> {
     }
 
     // Element
-    public function render(gui:Gui, mousePos:Maybe<Vec2>, xform:Mat3x2) {
+    public function render(gui:Gui, mousePos:Maybe<Vec2>, proj:Mat3x2, xform:Mat3x2) {
         var fit = getFit();
         if (mousePos != null) {
             var pos = mousePos.extract();
@@ -69,18 +54,18 @@ class Scroll<T> implements Element<Scroll<T>> {
             mousePos = getScroll().inverse() * (pos - new Vec2([fit.x, fit.y]));
         }
         gui.flushRender();
-        GL.scissor(Std.int(fit.x), Std.int(600-fit.y-fit.w), Std.int(fit.z), Std.int(fit.w));
-        getElement().render(gui, mousePos, xform * Mat3x2.translate(fit.x, fit.y) * getScroll());
+        gui.pushScissor(fit);
+        getElement().render(gui, mousePos, proj, xform * Mat3x2.translate(fit.x, fit.y) * getScroll());
         gui.flushRender();
-        GL.scissor(0,0, 800,600);
+        gui.popScissor();
     }
 
     public function suplRender(gui:Gui, xform:Mat3x2, f:Mat3x2->Void) {
         var fit = getFit();
         gui.flushRender();
-        GL.scissor(Std.int(fit.x), Std.int(600-fit.y-fit.w), Std.int(fit.z), Std.int(fit.w));
+        gui.pushScissor(fit);
         f(xform * Mat3x2.translate(fit.x, fit.y) * getScroll());
         gui.flushRender();
-        GL.scissor(0,0, 800,600);
+        gui.popScissor();
     }
 }

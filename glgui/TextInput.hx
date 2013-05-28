@@ -8,6 +8,8 @@ import goodies.Lazy;
 import glgui.Scroll;
 import glgui.Text;
 import gl3font.Font;
+import gl3font.GLString;
+import cpp.vm.Tls;
 
 class TextInput implements Element<TextInput> {
 
@@ -22,13 +24,12 @@ class TextInput implements Element<TextInput> {
     @:builder var multiline = false;
 
     // Text
-    @:builder var colour:Vec4 = [1.0,1.0,1.0,1.0];
+    @:builder var colour:Vec4 = [1,1,1,1]; // colour for inserted text!
     @:builder @:lazyVar var font:Font;
-    @:builder var halign = TextAlignLeft;
-    @:builder var valign = TextAlignTop;
-    @:builder var justified = false;
     @:builder var size = 0.0;
-    @:builder var text:String = "";
+    @:builder var text:GLString = "";
+
+    @:builder var fileInput = false;
 
     var pointer:Int = 0;
 
@@ -37,16 +38,59 @@ class TextInput implements Element<TextInput> {
     var mouse:Mouse;
     var hasFocus:Bool;
 
-    static var linefont:Font;
-    static var buffer:StringBuffer;
+    @:builder var matches:Maybe<Array<String>->Void> = null;
+
+    function tabComplete(inp:GLString) {
+        var x = inp;
+        if (x.length == 0 || (x.charCodeAt(0) != '/'.code && x.charCodeAt(0) != '.'.code)) {
+            if (x.length == 0) x = GLString.make("./", getColour());
+            else x = "./" + x;
+        }
+        var pre = x.substr(0,x.lastIndexOf('/'));
+        if (sys.FileSystem.isDirectory(pre.toString())) {
+            var dir = sys.FileSystem.readDirectory(pre.toString());
+            var matches = dir.filter(function (y) {
+                return (pre + "/" + y).substr(0,x.length) == x;
+            });
+            if (matches.length == 1) {
+                x = pre + "/" + matches[0];
+                if (sys.FileSystem.isDirectory(x.toString())) x += "/";
+                getMatches().call1([]);
+            }else {
+                var cnt = 0;
+                for (i in 0...100000) {
+                    var z = matches[0].charCodeAt(i);
+                    for (j in 1...matches.length) {
+                        if (matches[j].charCodeAt(i) != z) {
+                            z = null;
+                            break;
+                        }
+                    }
+                    if (z == null) break;
+                    cnt++;
+                }
+                x = pre + "/" + matches[0].substr(0,cnt);
+                getMatches().call1(matches);
+            }
+        }else getMatches().call1([]);
+        if (x.length < inp.length) return inp;
+        pointer = x.length;
+        return x;
+    }
+
+    @:lazyVar static var linefont:Tls<Font> = new Tls<Font>();
+    @:lazyVar static var buffer:Tls<StringBuffer> = new Tls<StringBuffer>();
     public function new() {
-        if (linefont == null) {
-            linefont = new Font(null, "line.distance.png");
-            buffer = new StringBuffer(linefont);
-            buffer.reserve(6);
+        if (linefont.value == null) {
+            linefont.value = new Font(null, "line.distance.png");
+            buffer.value = new StringBuffer(linefont.value);
+            buffer.value.reserve(6);
         }
 
-        textarea = new Text();
+        textarea = new Text()
+            .halign(TextAlignLeft)
+            .valign(TextAlignTop)
+            .justified(false);
         scroll = new Scroll();
         scroll.element(textarea);
         mouse = new Mouse()
@@ -61,11 +105,19 @@ class TextInput implements Element<TextInput> {
                 pointer = textarea.pointIndex(x).char;
             })
             .character(function (chars) {
+                var t = getText();
                 for (c in chars) {
-                    if (getText().length == getMaxChars()) break;
-                    if (getAllowed().runOr(function (a) return a.match(String.fromCharCode(c)), true)) {
-                        text(getText().substr(0, pointer) + String.fromCharCode(c) + getText().substr(pointer));
-                        pointer++;
+                    if (c == '\t'.code && getFileInput()) {
+                        text(t = tabComplete(t));
+                    }
+                    else {
+                        if (t.length == getMaxChars()) break;
+                        if (getAllowed().runOr(function (a) return a.match(String.fromCharCode(c)), true)) {
+                            text(t = t.substr(0,pointer)
+                                   + GLString.make(String.fromCharCode(c),getColour())
+                                   + t.substr(pointer));
+                            pointer++;
+                        }
                     }
                 }
             })
@@ -73,6 +125,7 @@ class TextInput implements Element<TextInput> {
                 hasFocus = true;
             })
             .key(function (keys) {
+                var t = getText();
                 for (k in keys) {
                     switch (k.state) {
                     case KSPress | KSDelayedHold:
@@ -84,8 +137,8 @@ class TextInput implements Element<TextInput> {
                         }
                         else if (k.key == KeyCode.RIGHT) {
                             var np = pointer+1;
-                            if (np > getText().length)
-                                np = getText().length;
+                            if (np > t.length)
+                                np = t.length;
                             if (textarea.toPosition(np).line ==
                                 textarea.toPosition(pointer).line)
                                 pointer = np;
@@ -124,19 +177,19 @@ class TextInput implements Element<TextInput> {
 
                         else if (k.key == KeyCode.ENTER) {
                             if (getMultiline()) {
-                                if (getText().length != getMaxChars()) {
-                                    text(getText().substr(0,pointer) + "\n" + getText().substr(pointer));
+                                if (t.length != getMaxChars()) {
+                                    text(t = t.substr(0,pointer) + "\n" + t.substr(pointer));
                                     pointer++;
                                 }
                             }
                         }
 
                         else if (k.key == KeyCode.DELETE) {
-                            text(getText().substr(0, pointer) + getText().substr(pointer+1));
+                            text(t = t.substr(0,pointer) + t.substr(pointer+1));
                         }
                         else if (k.key == KeyCode.BACKSPACE) {
                             if (pointer != 0) {
-                                text(getText().substr(0, pointer-1) + getText().substr(pointer));
+                                text(t = t.substr(0,pointer-1)+t.substr(pointer));
                                 pointer--;
                             }
                         }
@@ -167,26 +220,22 @@ class TextInput implements Element<TextInput> {
     public var scrollX:Float = 0;
     public var scrollY:Float = 0;
     public function commit() {
-        textarea.colour(getColour())
-                .font(getFont())
-                .halign(getHalign())
-                .valign(getValign())
-                .justified(getJustified())
+        textarea.font(getFont())
                 .size(getSize())
                 .text(getText())
                 .commit();
         mouse.fit(getFit()).commit();
         scroll
             .fit(getFit())
-            .scroll(Mat3x2.translate(2+scrollX,2+scrollY))
+            .scroll(Mat3x2.translate(3+scrollX,3+scrollY))
             .commit();
         return this;
     }
 
     // Element
-    public function render(gui:Gui, mousePos:Maybe<Vec2>, xform:Mat3x2) {
+    public function render(gui:Gui, mousePos:Maybe<Vec2>, proj:Mat3x2, xform:Mat3x2) {
         commit();
-        scroll.render(gui, null, xform);
+        scroll.render(gui, null, proj, xform);
         scroll.suplRender(gui, xform, function (xform) {
             var pos = textarea.toPhysical(textarea.toPosition(pointer));
 
@@ -203,21 +252,22 @@ class TextInput implements Element<TextInput> {
             c2.x += scrollX;
 
             if (Math.cos(gui.getTime()*5)<0.5 && hasFocus) {
+                var buffer = buffer.value;
                 buffer.clear();
                 var d = StringBuffer.VERTEX_SIZE;
                 var index = buffer.reserve(6)-d;
 
-                buffer.vertex(index+=d, c1.x-3-scrollX,c1.y, 0,0);
-                buffer.vertex(index+=d, c2.x-3-scrollX,c2.y, 0,0);
-                buffer.vertex(index+=d, c2.x+3-scrollX,c2.y, 1,0);
+                var col:Vec4 = getColour();
+                buffer.vertex(index+=d, c1.x-3-scrollX,c1.y, 0,0, col);
+                buffer.vertex(index+=d, c2.x-3-scrollX,c2.y, 0,0, col);
+                buffer.vertex(index+=d, c2.x+3-scrollX,c2.y, 1,0, col);
 
-                buffer.vertex(index+=d, c1.x-3-scrollX,c1.y, 0,0);
-                buffer.vertex(index+=d, c2.x+3-scrollX,c2.y, 1,0);
-                buffer.vertex(index+=d, c1.x+3-scrollX,c1.y, 1,0);
+                buffer.vertex(index+=d, c1.x-3-scrollX,c1.y, 0,0, col);
+                buffer.vertex(index+=d, c2.x+3-scrollX,c2.y, 1,0, col);
+                buffer.vertex(index+=d, c1.x+3-scrollX,c1.y, 1,0, col);
 
                 gui.textRenderer()
-                    .setColour([0,0,0,1])
-                    .setTransform(xform)
+                    .setTransform(proj * xform)
                     .render(buffer);
             }
 
@@ -229,7 +279,7 @@ class TextInput implements Element<TextInput> {
             if (scrollY > 0) scrollY = 0;
             if (c2.y+scrollY+2 > getFit().w-4) scrollY = getFit().w-6-c2.y;
         });
-        mouse.render(gui, mousePos, xform);
+        mouse.render(gui, mousePos, proj, xform);
         hasFocus = false;
     }
 }

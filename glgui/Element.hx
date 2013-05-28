@@ -66,6 +66,8 @@ interface Element<T> extends Builder extends MaybeEnv extends LazyEnv {
      * special element to handle events
      *
      * transform is parent transformation for rendering.
+     * projection a final transformation just before rendering.
+     * kept seperate for reversal of transforms into image space.
      */
-    public function render(gui:Gui, mouse:Maybe<Vec2>, transform:Mat3x2):Void;
+    public function render(gui:Gui, mouse:Maybe<Vec2>, projection:Mat3x2, transform:Mat3x2):Void;
 }

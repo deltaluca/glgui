@@ -5,6 +5,7 @@ import glgui.Panel;
 import glgui.Text;
 import glgui.Mouse;
 import gl3font.Font;
+import gl3font.GLString;
 import goodies.Maybe;
 
 using glgui.Transform;
@@ -27,14 +28,14 @@ class PanelButton implements Element<PanelButton> {
     @:builder var toggled = false;
 
     @:builder var font:Font;
-    @:builder var text:String;
+    @:builder var text:GLString;
+    @:builder var disabledText:GLString;
+    @:builder var size:Int = -1;
 
     @:builder var colour      :Vec4 = [0.1,0.1,0.1,1.0];
-    @:builder var fontColour  :Vec4 = [1.0,1.0,1.0,1.0];
     @:builder var borderColour:Vec4 = [0.3,0.3,0.3,1.0];
     @:builder var overColour  :Vec4 = [0.0,0.0,0.0,0.2];
     @:builder var pressColour :Vec4 = [0.5,0.5,0.5,1.0];
-    @:builder var disabledFontColour:Vec4 = [0.3,0.3,0.3,1.0];
 
     @:builder var press:Maybe<Bool->Void>;
 
@@ -51,12 +52,12 @@ class PanelButton implements Element<PanelButton> {
         buttonBorder = new Panel();
         buttonPress  = new Panel().active(false);
         buttonMiddle = new Panel();
-        buttonOver   = new Panel().active(true);
+        buttonOver   = new Panel().active(false);
         buttonText   = new Text();
         buttonMouse  = new Mouse()
             .interior(buttonBorder.internal)
-            .enter  (function () buttonOver .active(false))
-            .exit   (function () buttonOver .active(true ))
+            .enter  (function () buttonOver .active(true ))
+            .exit   (function () buttonOver .active(false))
             .press  (function (_, but) {
                 if (Type.enumEq(but, MouseLeft))
                     buttonPress.active(true);
@@ -122,32 +123,34 @@ class PanelButton implements Element<PanelButton> {
             .fit(fit + new Vec4([t+0.5*r,t+0.5*r,-(t+0.5*r)*2,-(t+0.5*r)*2]))
             .font(getFont())
             .text(getText())
-            .colour(getFontColour())
+            .halign(TextAlignCentre)
+            .valign(TextAlignCentre)
+            .size(getSize())
             .commit();
         return this;
     }
 
     // Element
-    public function render(gui:Gui, mousePos:Maybe<Vec2>, xform:Mat3x2) {
-        buttonBorder.render(gui, mousePos, xform);
+    public function render(gui:Gui, mousePos:Maybe<Vec2>, proj:Mat3x2, xform:Mat3x2) {
+        buttonBorder.render(gui, mousePos, proj, xform);
 
         if (getDisabled()) buttonPress.active(false);
         if (toggleButton) buttonPress.active(getToggled());
         if (buttonPress.getActive())
-            buttonPress .render(gui, mousePos, xform);
+            buttonPress .render(gui, mousePos, proj, xform);
 
-        buttonMiddle.render(gui, mousePos, xform);
+        buttonMiddle.render(gui, mousePos, proj, xform);
 
-        buttonText.colour(getFontColour());
-        if (getDisabled()) buttonText.colour(getDisabledFontColour());
+        buttonText.text(getText());
+        if (getDisabled()) buttonText.text(getDisabledText());
         if (toggleButton)
-            buttonText.colour(getToggled() ? getFontColour() : getDisabledFontColour());
-        buttonText  .render(gui, mousePos, xform);
+            buttonText.text(getToggled() ? getText() : getDisabledText());
+        buttonText.commit().render(gui, mousePos, proj, xform);
 
-        if (getDisabled()) buttonOver.active(true);
+        if (getDisabled()) buttonOver.active(false);
         if (buttonOver.getActive())
-            buttonOver  .render(gui, mousePos, xform);
+            buttonOver  .render(gui, mousePos, proj, xform);
 
-        buttonMouse .render(gui, mousePos, xform);
+        buttonMouse .render(gui, mousePos, proj, xform);
     }
 }

@@ -1,5 +1,6 @@
 package glgui;
 
+import ogl.GL;
 import ogl.GLM;
 import gl3font.Font;
 import goodies.Builder;
@@ -173,6 +174,7 @@ class Gui implements Builder implements MaybeEnv {
         sightMiddle = [];
 
         focus = [];
+        scissorStack = [];
     }
 
     /**
@@ -230,10 +232,9 @@ class Gui implements Builder implements MaybeEnv {
     @:builder var time:Float = 0.0;
 
     /**
-     * Set projection matrix for gui rendering.
-     * eg: Mat3x2.viewportMap(width, height)
+     * Set screen width/height
      */
-    @:builder var projection:Mat3x2 = Mat3x2.identity();
+    @:builder var screen:Vec2;
 
     /**
      * Set mouse position for event processing.
@@ -291,6 +292,25 @@ class Gui implements Builder implements MaybeEnv {
      */
     public var focus(default,null):Array<Mouse>;
 
+    var scissorStack:Array<Vec4>;
+    @:allow(glgui)
+    function pushScissor(x:Vec4) {
+        GL.enable(GL.SCISSOR_TEST);
+        GL.scissor(Math.floor(x.x), Math.floor(getScreen().y-x.y-x.w), Math.ceil(x.z), Math.ceil(x.w));
+        scissorStack.push(x);
+    }
+    @:allow(glgui)
+    function popScissor() {
+        scissorStack.pop();
+        if (scissorStack.length == 0) {
+            GL.scissor(0, 0, Math.ceil(getScreen().x), Math.ceil(getScreen().y));
+        }
+        else {
+            var x = scissorStack[scissorStack.length-1];
+            GL.disable(GL.SCISSOR_TEST);
+        }
+    }
+
     /*
      * Render a GUI element
      */
@@ -300,7 +320,7 @@ class Gui implements Builder implements MaybeEnv {
                 for (m in registeredMice) m.outside(this);
                 registeredMice = [];
             }
-            x.render(this, getMousePos(), getProjection());
+            x.render(this, getMousePos(), Mat3x2.viewportMap(getScreen().x, getScreen().y), Mat3x2.identity());
         }
     }
 
