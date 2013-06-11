@@ -18,6 +18,15 @@ class Group implements Element<Group> {
         elements.push(e);
         return this;
     }
+    public inline function removeElement(e:Dynamic) {
+        elements.remove(e);
+        return this;
+    }
+    public inline function bringToFront(e:Dynamic) {
+        elements.remove(e);
+        elements.push(e);
+        return this;
+    }
 
     public var elements:Array<Dynamic>;
     public function new() {

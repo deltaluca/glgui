@@ -73,7 +73,7 @@ class Image implements Element<Image> {
     }
 
     // Element
-    public function render(gui:Gui, _, proj:Mat3x2, xform:Mat3x2) {
+    public function render(gui:Gui, mousePos:Maybe<Vec2>, proj:Mat3x2, xform:Mat3x2) {
         var fit = getFit();
         var transform:Mat3x2 = [
             fit.z,   0,
@@ -83,6 +83,7 @@ class Image implements Element<Image> {
         gui.imageRenderer()
             .setTransform(proj * xform * transform)
             .render(this);
+        if (mousePos.runOr(internal, false) && getOccluder()) gui.occludes();
     }
 }
 

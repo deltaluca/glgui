@@ -13,6 +13,8 @@ import glgui.Mouse;
 import glgui.Image;
 import glgui.Scroll;
 import glgui.Group;
+import glgui.Vector;
+import glgui.Custom;
 import glgui.GLFWGui;
 import glgui.PanelButton;
 import glgui.TextInput;
@@ -20,8 +22,42 @@ import glgui.TextInput;
 using glgui.Transform;
 using glgui.Colour;
 
+import glgui.GLFWEventLoop;
+import cpp.vm.Thread;
+
 class Main {
-    static function main () {
+    static function main() {
+        GLFW.init();
+
+        GLFW.windowHint(GLFW.VISIBLE, 0);
+        GLFW.windowHint(GLFW.SAMPLES, 16);
+
+        var eventLoop = new GLFWEventLoop();
+        Thread.current().sendMessage(TOpenWindow(function () {
+        var m:TMessage = Thread.readMessage(true);
+        switch (m) {
+        case TInit(win):
+            win.main.sendMessage(TSetSize(win.window, 550, 400));
+            win.main.sendMessage(TSetTitle(win.window, "Hello"));
+            win.main.sendMessage(TMakeVisible(win.window));
+
+            while (true) {
+                var msg:TMessage = Thread.readMessage(true);
+                switch (msg) {
+                case TUpdate(shouldClose):
+                    if (shouldClose) break;
+                default:
+                }
+            }
+
+            win.main.sendMessage(TTerminate);
+        default: }}));
+
+        eventLoop.run();
+        GLFW.terminate();
+    }
+
+    static function maisn () {
         GLFW.init();
 
         GLFW.windowHint(GLFW.SAMPLES, 16);
@@ -39,22 +75,51 @@ class Main {
 
         var dejavu = new Font("../gl3font/dejavu/sans.dat", "../gl3font/dejavu/sans.png");
 
-        var debug = new nape.util.OGLDebug(550, 400);
-        function drawRect(v:goodies.Maybe<Vec4>, col:Int) {
-            if (v == null) return;
-            var v = v.extract();
-            debug.drawAABB(new nape.geom.AABB(v.x, v.y, v.z, v.w), col);
-        }
-
         while (!GLFW.windowShouldClose(w)) {
-            debug.clear();
             GL.clear(GL.COLOR_BUFFER_BIT);
             GLFW.pollEvents();
             var size = GLFW.getWindowSize(w);
             GL.viewport(0, 0, size.width, size.height);
             glfw.updateState(gui);
 
-            // Image test
+            var mouse = cache.cache("mouse1",
+                new Mouse()
+                .interior(function (x:Vec2) return x.x < 400)
+                .press(function (_,_) trace("mouse1"))
+                .commit()
+           );
+           gui.render(mouse);
+
+           gui.render(cache.cache("panel",
+            new Panel()
+            .fit([150,150,150,150])
+            .colour([1,1,1,1])
+            .radius(0)
+            .commit()
+           ));
+
+           var mouse = cache.cache("mouse2",
+                new Mouse()
+                .interior(function (x:Vec2) return x.x > 150)
+                .press(function (_,_) trace("mouse2"))
+                .commit()
+           );
+           gui.render(mouse);
+
+            var g = cache.cache("group",
+                new Scroll()
+                .fit([100,100,200,200])
+                .element(new Custom()
+                    .apply(function (gui,_,p,x) {
+                        var dr = gui.drawings();
+                        dr.setTransform(p * x);
+                        dr.drawLine([-100,-100],[100,100],[1,0,0,1]);
+                    })
+                ).commit()
+            );
+            gui.render(g);
+
+/*            // Image test
             var image = cache.cache("image",
                 Image.fromPNG("background01.png")
                 .fit([0,0,200,100])
@@ -342,10 +407,17 @@ class Main {
 
             var drawing = gui.drawings();
             drawing.setTransform(gui.projection());
-            drawing.drawLine([0,0], [550,400], [1,1,1,1]);
+            drawing.drawLine([0,0], [550,400], [1,1,1,1]);*/
+
+            gui.render(cache.cache("vec",
+                new Vector()
+                .image(dejavu)
+                .fit([50,50,50,50])
+                .uv([0,0,0.1,0.1])
+                .commit()
+            ));
 
             gui.flush();
-            debug.flush();
 
             GLFW.swapBuffers(w);
         }

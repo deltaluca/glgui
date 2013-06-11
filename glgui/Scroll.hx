@@ -130,22 +130,24 @@ class Scroll<T> implements Element<Scroll<T>> {
         var fit = getFit();
         var scrollSize = getScrollSize();
         var bounds = getElement().bounds();
-        var bounds = if (bounds == null) new Vec4([0,0,0,0]) else xform * bounds.extract();
+        var bounds = if (bounds == null) new Vec4([0,0,0,0]) else bounds.extract();
         if (getHscroll()) {
             var s = getScroll();
-            s.x = Math.min(0, -hpercent*(bounds.z - fit.z));
+            s.x = Math.min(0, -hpercent*(bounds.z - fit.z)) - bounds.x;
             scroll(s);
         }
         if (getVscroll()) {
             var s = getScroll();
-            s.y = Math.min(0, -vpercent*(bounds.w - fit.w));
+            s.y = Math.min(0, -vpercent*(bounds.w - fit.w)) - bounds.y;
             scroll(s);
         }
         var tmousePos = null;
         if (mousePos != null) {
             var pos = mousePos.extract();
-            if (pos.x < fit.x || pos.y < fit.y ||
-                pos.x > fit.x+fit.z || pos.y > fit.y+fit.w) tmousePos = null;
+            if (!gui.getMouseLeft() &&
+               (pos.x < fit.x || pos.y < fit.y ||
+                pos.x > fit.x+fit.z || pos.y > fit.y+fit.w))
+                tmousePos = null;
             else
                 tmousePos = stransform().inverse() * (pos - new Vec2([fit.x, fit.y]));
         }

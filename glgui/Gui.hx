@@ -161,6 +161,8 @@ class Gui implements Builder implements MaybeEnv {
     var imageRender:ImageRenderer;
     var drawing:Drawing;
 
+    public var invalidated:Bool=false;
+
     public function new() {
         textRender  = new FontRenderer();
         imageRender = new ImageRenderer();
@@ -296,19 +298,38 @@ class Gui implements Builder implements MaybeEnv {
     @:allow(glgui)
     function pushScissor(x:Vec4) {
         GL.enable(GL.SCISSOR_TEST);
-        GL.scissor(Math.floor(x.x), Math.floor(getScreen().y-x.y-x.w), Math.ceil(x.z), Math.ceil(x.w));
-        scissorStack.push(x);
+        if (scissorStack.length == 0) {
+            GL.scissor(Math.floor(x.x), Math.floor(getScreen().y-x.y-x.w), Math.ceil(x.z), Math.ceil(x.w));
+            scissorStack.push(x);
+        } else {
+            var y = scissorStack[scissorStack.length-1];
+            var z:Vec4 = [Math.max(x.x, y.x), Math.max(x.y, y.y), Math.min(x.x+x.z, y.x+y.z), Math.min(x.y+x.w, y.y+y.w)];
+            z.z -= z.x;
+            z.w -= z.y;
+            if (z.z <= 0 || z.w <= 0) {
+                z.z = z.w = 0;
+                GL.scissor(0,0,0,0);
+            }
+            else
+                GL.scissor(Math.floor(z.x), Math.floor(getScreen().y-z.y-z.w), Math.ceil(z.z), Math.ceil(z.w));
+            scissorStack.push(z);
+        }
     }
     @:allow(glgui)
     function popScissor() {
         scissorStack.pop();
         if (scissorStack.length == 0) {
-            GL.scissor(0, 0, Math.ceil(getScreen().x), Math.ceil(getScreen().y));
+            GL.disable(GL.SCISSOR_TEST);
         }
         else {
             var x = scissorStack[scissorStack.length-1];
-            GL.disable(GL.SCISSOR_TEST);
+            GL.scissor(Math.floor(x.x), Math.floor(getScreen().y-x.y-x.w), Math.ceil(x.z), Math.ceil(x.w));
         }
+    }
+
+    public function occludes() {
+        for (m in registeredMice) m.outside(this);
+        registeredMice = [];
     }
 
     /*
@@ -316,10 +337,6 @@ class Gui implements Builder implements MaybeEnv {
      */
     public function render<S,T:Element<S>>(x:T) {
         if (x.getActive()) {
-            if (getMousePos().runOr(x.internal, false) && x.getOccluder()) {
-                for (m in registeredMice) m.outside(this);
-                registeredMice = [];
-            }
             x.render(this, getMousePos(), Mat3x2.viewportMap(getScreen().x, getScreen().y), Mat3x2.identity());
         }
     }

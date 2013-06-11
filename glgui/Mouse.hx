@@ -48,6 +48,8 @@ class Mouse implements Element<Mouse> {
     /** Handler for mouse-scroll event */
     @:builder var scroll :Maybe<Float->Void>  = null;
 
+    @:builder var mouse:Maybe<Maybe<Vec2>->Void> = null;
+
 
     @:builder var focus:Maybe<Void->Void> = null;
 
@@ -73,7 +75,9 @@ class Mouse implements Element<Mouse> {
     /** If mouse middle button area is currently pressed on mouse area */
     public var isPressedMiddle(default,null) = false;
 
-    public function new() {}
+    var id:Int;
+    static var nextId = 0;
+    public function new() { id = nextId++; }
 
     // Element
     public function destroy() {}
@@ -109,17 +113,17 @@ class Mouse implements Element<Mouse> {
         getOver().call1(cast gui.getMousePos());
         if (!isPressedLeft && gui.mouseWasPressedLeft) {
             isPressedLeft = true;
-            getPress().call2(cast gui.getMousePos(), MouseLeft);
+            getPress().call2(cast cmousePos, MouseLeft);
             gui.sightLeft.push(this);
         }
         if (!isPressedRight && gui.mouseWasPressedRight) {
             isPressedRight = true;
-            getPress().call2(cast gui.getMousePos(), MouseRight);
+            getPress().call2(cast cmousePos, MouseRight);
             gui.sightRight.push(this);
         }
         if (!isPressedMiddle && gui.mouseWasPressedMiddle) {
             isPressedMiddle = true;
-            getPress().call2(cast gui.getMousePos(), MouseMiddle);
+            getPress().call2(cast cmousePos, MouseMiddle);
             gui.sightMiddle.push(this);
         }
 
@@ -142,22 +146,37 @@ class Mouse implements Element<Mouse> {
     @:allow(glgui)
     function releasedLeft(pos:Maybe<Vec2>) {
         isPressedLeft = false;
-        getRelease().call3(cast pos, MouseLeft, isOver);
+        if (getRelease() != null) {
+            var release:Maybe<Vec2>->MouseButton->Bool->Void = getRelease().extract();
+            release(cmousePos, MouseLeft, isOver);
+        }
     }
     @:allow(glgui)
-    function releasedRight(pos:Maybe<Vec2>) {
+    function releasedRight(cmousePos:Maybe<Vec2>) {
         isPressedRight = false;
-        getRelease().call3(cast pos, MouseRight, isOver);
+        if (getRelease() != null) {
+            var release:Maybe<Vec2>->MouseButton->Bool->Void = getRelease().extract();
+            release(cmousePos, MouseRight, isOver);
+        }
     }
     @:allow(glgui)
-    function releasedMiddle(pos:Maybe<Vec2>) {
+    function releasedMiddle(cmousePos:Maybe<Vec2>) {
         isPressedMiddle = false;
-        getRelease().call3(cast pos, MouseMiddle, isOver);
+        if (getRelease() != null) {
+            var release:Maybe<Vec2>->MouseButton->Bool->Void = getRelease().extract();
+            release(cmousePos, MouseMiddle, isOver);
+        }
     }
 
     // Element
+    var cmousePos:Maybe<Vec2>;
     public function render(gui:Gui, mousePos:Maybe<Vec2>, _, _) {
-        if (mousePos.runOr(internal, false)) gui.registerMouse(this);
+        cmousePos = mousePos;
+        if (mousePos.runOr(internal, false)) {
+            if (getOccluder()) gui.occludes();
+            gui.registerMouse(this);
+        }
         else outside(gui);
+        getMouse().call1(cast cmousePos);
     }
 }

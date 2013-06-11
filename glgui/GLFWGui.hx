@@ -71,13 +71,14 @@ class GLFWGui {
     }
 
     public function updateState(gui:Gui) {
+        var left = GLFW.getMouseButton(window, GLFW.MOUSE_BUTTON_LEFT);
         var size = GLFW.getWindowSize(window);
         gui.screen([size.width, size.height])
            .time(GLFW.getTime())
-           .mouseLeft  (GLFW.getMouseButton(window, GLFW.MOUSE_BUTTON_LEFT))
+           .mouseLeft  (left)
            .mouseRight (GLFW.getMouseButton(window, GLFW.MOUSE_BUTTON_RIGHT))
            .mouseMiddle(GLFW.getMouseButton(window, GLFW.MOUSE_BUTTON_MIDDLE))
-           .mousePos(if (mouseOver) GLFW.getCursorPos(window) else null)
+           .mousePos(if (mouseOver || left) GLFW.getCursorPos(window) else null)
            .mouseScroll(scroll)
            .keysPressed(keysPressed.copy())
            .charsPressed(charsPressed.copy());

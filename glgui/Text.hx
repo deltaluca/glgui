@@ -256,10 +256,11 @@ class Text implements Element<Text> {
     }
 
     // Element
-    public function render(gui:Gui, _, proj:Mat3x2, xform:Mat3x2) {
+    public function render(gui:Gui, mpos:Maybe<Vec2>, proj:Mat3x2, xform:Mat3x2) {
         lastgui = gui;
         gui.textRenderer()
             .setTransform(proj * (finalTransform = xform * transform))
             .render(buffer);
+        if (mpos.runOr(internal, false) && getOccluder()) gui.occludes();
     }
 }

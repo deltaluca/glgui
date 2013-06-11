@@ -114,7 +114,7 @@ class TextInput implements Element<TextInput> {
             })
             .press(function (x:Maybe<Vec2>, but) {
                 if (x == null) return;
-                var x = x.extract();
+                var x = lastTransform * x.extract();
                 pointer = textarea.pointIndex(x).char;
             })
             .character(function (chars) {
@@ -123,7 +123,12 @@ class TextInput implements Element<TextInput> {
                     if (c == '\t'.code && getFileInput()) {
                         text(t = tabComplete(t));
                     }
-                    else {
+                    else if (c == '\t'.code) {
+                            text(t = t.substr(0,pointer)
+                                   + GLString.make("    ",getColour())
+                                   + t.substr(pointer));
+                            pointer+=4;
+                    }else {
                         if (t.length == getMaxChars()) break;
                         if (getAllowed().runOr(function (a) return a.match(String.fromCharCode(c)), true)) {
                             text(t = t.substr(0,pointer)
@@ -212,6 +217,10 @@ class TextInput implements Element<TextInput> {
             });
     }
 
+    public function gotoEnd() {
+        pointer = getText().length;
+    }
+
     // Element
     public function destroy() {
         textarea.destroy();
@@ -246,6 +255,7 @@ class TextInput implements Element<TextInput> {
     }
 
     // Element
+    var lastTransform:Mat3x2;
     public function render(gui:Gui, mousePos:Maybe<Vec2>, proj:Mat3x2, xform:Mat3x2) {
         commit();
         scroll.render(gui, null, proj, xform);
@@ -292,7 +302,9 @@ class TextInput implements Element<TextInput> {
             if (scrollY > 0) scrollY = 0;
             if (c2.y+scrollY+2 > getFit().w-4) scrollY = getFit().w-6-c2.y;
         });
+        lastTransform = xform;
         mouse.render(gui, mousePos, proj, xform);
         hasFocus = false;
+        if (mousePos.runOr(internal, false) && getOccluder()) gui.occludes();
     }
 }

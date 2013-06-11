@@ -16,7 +16,7 @@ class PanelButton implements Element<PanelButton> {
     // Element
     @:builder var active = true;
     @:builder var fit:Vec4 = [0.0,0.0,0.0,0.0];
-    @:builder var occluder = true;
+    @:builder var occluder = false; //unused
 
     // PanelButton
     @:builder var radius   :Float = 0;
@@ -48,6 +48,7 @@ class PanelButton implements Element<PanelButton> {
     var buttonText  :Text;
     var buttonMouse :Mouse;
 
+    public var lastGui:Gui;
     public function new(toggleButton=false) {
         this.toggleButton = toggleButton;
         buttonBorder = new Panel();
@@ -60,12 +61,16 @@ class PanelButton implements Element<PanelButton> {
             .enter  (function () buttonOver .active(true ))
             .exit   (function () buttonOver .active(false))
             .press  (function (_, but) {
-                if (Type.enumEq(but, MouseLeft))
+                if (Type.enumEq(but, MouseLeft)) {
                     buttonPress.active(true);
+                    lastGui.invalidated = true;
+                }
             })
             .release(function (_, but, over) {
-                if (Type.enumEq(but, MouseLeft))
+                if (Type.enumEq(but, MouseLeft)) {
                     buttonPress.active(false);
+                    lastGui.invalidated = true;
+                }
                 if (over && !getDisabled()) {
                     if (toggleButton) {
                         toggled(!getToggled());
@@ -134,6 +139,7 @@ class PanelButton implements Element<PanelButton> {
 
     // Element
     public function render(gui:Gui, mousePos:Maybe<Vec2>, proj:Mat3x2, xform:Mat3x2) {
+        lastGui = gui;
         buttonBorder.render(gui, mousePos, proj, xform);
 
         if (getDisabled()) buttonPress.active(false);

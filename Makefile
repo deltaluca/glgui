@@ -3,7 +3,7 @@ all: haxelib main
 
 main:
 	set -x
-	haxe -main Main -cpp bin -D HXCPP_M64 -lib glgui -lib glfw3 -lib nape
+	haxe -main Main -cpp bin -D HXCPP_M64 -lib glgui -lib glfw3
 
 haxelib:
 	rm -f glgui.zip

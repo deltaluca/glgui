@@ -162,9 +162,10 @@ class Panel implements Element<Panel> {
     }
 
     // Element
-    public function render(gui:Gui, _, proj:Mat3x2, xform:Mat3x2) {
+    public function render(gui:Gui, mpos:Maybe<Vec2>, proj:Mat3x2, xform:Mat3x2) {
         gui.textRenderer()
             .setTransform(proj * xform)
             .render(buffer);
+        if (mpos.runOr(internal, false) && getOccluder()) gui.occludes();
     }
 }

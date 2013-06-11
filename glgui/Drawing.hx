@@ -117,6 +117,24 @@ class Drawing {
         vertex(vindex,1, p1, c);
     }
 
+    public function drawDashedLine(p0:Vec2, p1:Vec2, c:Vec4, solid:Float, gap:Float) {
+        var dt = Vec2.distance(p0, p1);
+        var del = Vec2.normalize(p1 - p0);
+        var d = 0.0;
+        var p = p0;
+        while (d < dt) {
+            var dp = d + solid;
+            if (dp > dt) dp = dt;
+            drawLine(p0 + del*d, p0 + del*dp, c);
+            d = dp;
+            if (d >= dt) break;
+            var dp = d + gap;
+            if (dp > dt) dp = dt;
+            d = dp;
+            if (d >= dt) break;
+        }
+    }
+
     public function drawRectangle(min:Vec2, max:Vec2, c:Vec4) {
         swapLines();
         var vindex = reserve(8);
