@@ -7,6 +7,7 @@ import glgui.Gui;
 import ogl.GLM;
 import cpp.vm.Thread;
 import goodies.Maybe;
+import goodies.CoalescePrint;
 
 typedef TWindow = {
     window:Window,
@@ -46,10 +47,17 @@ class GLFWEventLoop {
         windows = [];
     }
 
+    public static inline function track(msg:String) {
+        #if glgui_track
+            CoalescePrint.log(msg);
+        #end
+    }
+
     public function run() {
         var nextId = 0;
         while (true) {
             var msg:Maybe<TMessage> = Thread.readMessage(false);
+            if (msg != null) track('\033[31mGLFWEventLoop\033[m ${msg.extract()}');
             if (msg != null) switch (msg.extract()) {
                 case TTerminate: break;
                 case TOpenWindow(from, run):
