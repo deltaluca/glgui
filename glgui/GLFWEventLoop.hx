@@ -47,9 +47,10 @@ class GLFWEventLoop {
         windows = [];
     }
 
-    public static inline function track(msg:String) {
+    public static inline function track(msg:String, ?pos:haxe.PosInfos) {
         #if glgui_track
-            CoalescePrint.log(msg);
+            var postrace = '${pos.className}::${pos.methodName} (${pos.fileName}@${pos.lineNumber})';
+            CoalescePrint.log(msg + "\033[33m ~~ \033[33;4m" + postrace + "\033[m");
         #end
     }
 
@@ -58,19 +59,23 @@ class GLFWEventLoop {
         while (true) {
             var msg:Maybe<TMessage> = Thread.readMessage(false);
             if (msg != null) track('\033[31mGLFWEventLoop\033[m ${msg.extract()}');
+            else track('\033[31mGLFWEventLoop0\033[m idle');
             if (msg != null) switch (msg.extract()) {
                 case TTerminate: break;
                 case TOpenWindow(from, run):
                     var win = {
-                        window : GLFW.createWindow(10,10,""),
+                        window : GLFW.createWindow(100,100,""),
                         main : Thread.current(),
                         thread : Thread.create(run),
                         isBusy : false,
                         id : nextId++
                     };
+                    track('@ \033[31mGLFWEventLoop\033[m TInit -> [window]');
                     win.thread.sendMessage(TInit(win));
-                    if (from != null)
+                    if (from != null) {
+                        track('@ \033[31mGLFWEventLoop\033[m TOpened -> [thread]');
                         from.sendMessage(TOpened(win));
+                    }
                     windows.push(win);
                 case TCloseWindow(win):
                     GLFW.destroyWindow(win.window);
@@ -91,8 +96,10 @@ class GLFWEventLoop {
             GLFW.pollEvents();
 
             for (win in windows) {
+                track('win busy=${win.isBusy}');
                 if (!win.isBusy) {
                     win.isBusy = true;
+                    track('@ \033[31mGLFWEventLoop\033[m TUpdate -> [window]');
                     win.thread.sendMessage(TUpdate(
                         GLFW.windowShouldClose(win.window)
                     ));

@@ -41,7 +41,7 @@ class GLFWGui {
     function scrollCallback(_,_, y:Float) {
         scroll += y;
     }
-    function keyCallback(_, key:Int, state:Int, _) {
+    function keyCallback(_, key:Int, _, state:Int, _) {
         if (state != GLFW.RELEASE) {
             if (key == GLFW.TAB)
                 charsPressed.push('\t'.code);
