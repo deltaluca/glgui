@@ -9,7 +9,7 @@ import glgui.Scroll;
 import glgui.Text;
 import gl3font.Font;
 import gl3font.GLString;
-import cpp.vm.Tls;
+import #if cpp cpp #else neko #end.vm.Tls;
 
 class TextInput implements Element<TextInput> {
 

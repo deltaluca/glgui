@@ -5,7 +5,7 @@ import gl3font.Font;
 import goodies.Builder;
 import goodies.Maybe;
 import goodies.Lazy;
-import cpp.vm.Tls;
+import #if cpp cpp #else neko #end.vm.Tls;
 
 /**
  * Rounded rectangular panel GUI element.

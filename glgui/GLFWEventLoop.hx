@@ -5,7 +5,7 @@ package glgui;
 import glfw3.GLFW;
 import glgui.Gui;
 import ogl.GLM;
-import cpp.vm.Thread;
+import #if cpp cpp #else neko #end.vm.Thread;
 import goodies.Maybe;
 import goodies.CoalescePrint;
 
@@ -49,8 +49,8 @@ class GLFWEventLoop {
 
     public static inline function track(msg:String, ?pos:haxe.PosInfos) {
         #if glgui_track
-            var postrace = '${pos.className}::${pos.methodName} (${pos.fileName}@${pos.lineNumber})';
-            CoalescePrint.log(msg + "\033[33m ~~ \033[33;4m" + postrace + "\033[m");
+//            var postrace = '${pos.className}::${pos.methodName} (${pos.fileName}@${pos.lineNumber})';
+//            CoalescePrint.log(msg + "\033[33m ~~ \033[33;4m" + postrace + "\033[m");
         #end
     }
 
