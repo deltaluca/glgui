@@ -49,19 +49,27 @@ class GLFWEventLoop {
 
     public static inline function track(msg:String, ?pos:haxe.PosInfos) {
         #if glgui_track
-//            var postrace = '${pos.className}::${pos.methodName} (${pos.fileName}@${pos.lineNumber})';
-//            CoalescePrint.log(msg + "\033[33m ~~ \033[33;4m" + postrace + "\033[m");
+            var postrace = '${pos.className}::${pos.methodName} (${pos.fileName}@${pos.lineNumber})';
+            CoalescePrint.log(msg + "\033[33m ~~ \033[33;4m" + postrace + "\033[m");
         #end
     }
 
     public function run() {
         var nextId = 0;
+        var killed = false;
         while (true) {
             var msg:Maybe<TMessage> = Thread.readMessage(false);
             if (msg != null) track('\033[31mGLFWEventLoop\033[m ${msg.extract()}');
             else track('\033[31mGLFWEventLoop0\033[m idle');
             if (msg != null) switch (msg.extract()) {
-                case TTerminate: break;
+                case TTerminate:
+                    // Issue kill signals.
+                    for (w in windows) {
+                        track('@ \033[31mGLFWEventLoop\033[m TTerminate -> [window]');
+                        w.thread.sendMessage(TTerminate);
+                    }
+                    killed = true;
+                    if (windows.length == 0) break;
                 case TOpenWindow(from, run):
                     var win = {
                         window : GLFW.createWindow(100,100,""),
@@ -80,6 +88,7 @@ class GLFWEventLoop {
                 case TCloseWindow(win):
                     GLFW.destroyWindow(win.window);
                     windows.remove(win);
+                    if (killed && windows.length == 0) break;
                 case TSetSize(win, w, h):
                     GLFW.setWindowSize(win.window, w, h);
                 case TSetTitle(win, title):
@@ -93,6 +102,8 @@ class GLFWEventLoop {
                 default:
             }
 
+            if (killed) continue;
+
             GLFW.pollEvents();
 
             for (win in windows) {
@@ -105,11 +116,6 @@ class GLFWEventLoop {
                     ));
                 }
             }
-        }
-
-        while (windows.length > 0) {
-            var win = windows.pop();
-            GLFW.destroyWindow(win.window);
         }
     }
 

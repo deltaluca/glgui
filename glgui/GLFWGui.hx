@@ -26,12 +26,10 @@ class GLFWGui {
                  && xy.x < pos.x+size.width
                  && xy.y < pos.y+size.height;
         scroll = 0;
-//        cpp.vm.Gc.enterGCFreeZone();
         GLFW.setCursorEnterCallback(window, enterCallback);
         GLFW.setScrollCallback(window, scrollCallback);
         GLFW.setKeyCallback (window, keyCallback);
         GLFW.setCharCallback(window, charCallback);
-//        cpp.vm.Gc.exitGCFreeZone();
 
         keysPressed = [];
         charsPressed = [];

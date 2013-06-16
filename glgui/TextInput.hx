@@ -38,9 +38,12 @@ class TextInput implements Element<TextInput> {
     var mouse:Mouse;
     var hasFocus:Bool;
 
+    var inv:Bool = true;
+
     @:builder var matches:Maybe<Array<String>->Void> = null;
 
     function tabComplete(inp:GLString) {
+        inv = true;
         var x = inp;
         if (x.charCodeAt(0) == '~'.code) {
             if (x.length == 1) {
@@ -116,14 +119,17 @@ class TextInput implements Element<TextInput> {
                 if (x == null) return;
                 var x = lastTransform * x.extract();
                 pointer = textarea.pointIndex(x).char;
+                inv = true;
             })
             .character(function (chars) {
                 var t = getText();
                 for (c in chars) {
                     if (c == '\t'.code && getFileInput()) {
+                        inv = true;
                         text(t = tabComplete(t));
                     }
                     else if (c == '\t'.code) {
+                            inv = true;
                             text(t = t.substr(0,pointer)
                                    + GLString.make("    ",getColour())
                                    + t.substr(pointer));
@@ -131,6 +137,7 @@ class TextInput implements Element<TextInput> {
                     }else {
                         if (t.length == getMaxChars()) break;
                         if (getAllowed().runOr(function (a) return a.match(String.fromCharCode(c)), true)) {
+                            inv = true;
                             text(t = t.substr(0,pointer)
                                    + GLString.make(String.fromCharCode(c),getColour())
                                    + t.substr(pointer));
@@ -150,22 +157,27 @@ class TextInput implements Element<TextInput> {
                         if (k.key == KeyCode.LEFT) {
                             var np = pointer-1; if (np < 0) np = 0;
                             if (textarea.toPosition(np).line ==
-                                textarea.toPosition(pointer).line)
+                                textarea.toPosition(pointer).line) {
                                 pointer = np;
+                                inv = true;
+                            }
                         }
                         else if (k.key == KeyCode.RIGHT) {
                             var np = pointer+1;
                             if (np > t.length)
                                 np = t.length;
                             if (textarea.toPosition(np).line ==
-                                textarea.toPosition(pointer).line)
+                                textarea.toPosition(pointer).line) {
                                 pointer = np;
+                                inv = true;
+                            }
                         }
                         else if (k.key == KeyCode.UP) {
                             var p = textarea.toPosition(pointer);
                             if (p.line > 0) {
                                 p.line--;
                                 pointer = textarea.clamp(p).char;
+                                inv = true;
                             }
                         }
                         else if (k.key == KeyCode.DOWN) {
@@ -173,24 +185,29 @@ class TextInput implements Element<TextInput> {
                             if (p.line < textarea.textLayout.lines.length-1) {
                                 p.line++;
                                 pointer = textarea.clamp(p).char;
+                                inv = true;
                             }
                         }
 
                         else if (k.key == KeyCode.HOME) {
                             pointer = textarea.toLineStart(textarea.toPosition(pointer)).char;
+                            inv = true;
                         }
                         else if (k.key == KeyCode.END)  {
                             pointer = textarea.toLineEnd(textarea.toPosition(pointer)).char;
+                            inv = true;
                         }
                         else if (k.key == KeyCode.PAGE_UP) {
                             var p = textarea.toPosition(pointer);
                             p.line -= 20;
                             pointer = textarea.clamp(p).char;
+                            inv = true;
                         }
                         else if (k.key == KeyCode.PAGE_DOWN) {
                             var p = textarea.toPosition(pointer);
                             p.line += 20;
                             pointer = textarea.clamp(p).char;
+                            inv = true;
                         }
 
                         else if (k.key == KeyCode.ENTER) {
@@ -198,17 +215,20 @@ class TextInput implements Element<TextInput> {
                                 if (t.length != getMaxChars()) {
                                     text(t = t.substr(0,pointer) + "\n" + t.substr(pointer));
                                     pointer++;
+                                    inv = true;
                                 }
                             }
                         }
 
                         else if (k.key == KeyCode.DELETE) {
                             text(t = t.substr(0,pointer) + t.substr(pointer+1));
+                            inv = true;
                         }
                         else if (k.key == KeyCode.BACKSPACE) {
                             if (pointer != 0) {
                                 text(t = t.substr(0,pointer-1)+t.substr(pointer));
                                 pointer--;
+                                inv = true;
                             }
                         }
                     default:
@@ -251,13 +271,17 @@ class TextInput implements Element<TextInput> {
             .fit(getFit())
             .scroll([3+scrollX, 3+scrollY])
             .commit();
+        inv = false;
         return this;
     }
 
     // Element
     var lastTransform:Mat3x2;
     public function render(gui:Gui, mousePos:Maybe<Vec2>, proj:Mat3x2, xform:Mat3x2) {
-        commit();
+        if (inv) {
+            inv = false;
+            commit();
+        }
         scroll.render(gui, null, proj, xform);
         scroll.suplRender(gui, xform, function (xform) {
             var pos = textarea.toPhysical(textarea.toPosition(pointer));

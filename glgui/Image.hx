@@ -9,6 +9,7 @@ import glgui.Image;
 import goodies.Builder;
 import goodies.Maybe;
 import goodies.Lazy;
+import gl3font.PNG;
 
 using glgui.Transform;
 using glgui.Colour;
@@ -35,14 +36,12 @@ class Image implements Element<Image> {
     public static function fromPNG(file:String) {
         var ret = new Image();
 
-        var file = sys.io.File.read(file, true);
-        var pngData = (new format.png.Reader(file)).read();
-        var textureData:GLubyteArray = format.png.Tools.extract32(pngData).getData();
-        var pngHeader = format.png.Tools.getHeader(pngData);
+        var png = PNG.rgba(file);
+        var textureData:GLubyteArray = new GLubyteArray(cast png.data);
 
         var tex = GL.genTextures(1)[0];
         GL.bindTexture(GL.TEXTURE_2D, tex);
-        GL.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, pngHeader.width, pngHeader.height, 0, GL.RGBA, textureData);
+        GL.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, png.width, png.height, 0, GL.RGBA, textureData);
         GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.LINEAR);
         GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.LINEAR_MIPMAP_LINEAR);
         GL.generateMipmap(GL.TEXTURE_2D);
@@ -89,13 +88,19 @@ class Image implements Element<Image> {
 
 class ImageRenderer {
 
-    var program:GLuint;
-    var proj:GLuint;
+    var program:GLuint = -1;
+    var proj:GLuint = -1;
 
-    var vertexArray:Int;
-    var vertexBuffer:Int;
+    var vertexArray:Int = -1;
+    var vertexBuffer:Int = -1;
 
     public function new() {
+
+        function test(x:GLfloatArray) {
+            var x:GLArray = untyped x;
+            trace([x.isView, x.fixedCount, x.byteOffset, x.size, x.type, x.vector, x.count]);
+        }
+
         var vertexData:GLfloatArray = GL.allocBuffer(GL.FLOAT, 12);
         vertexArray = GL.genVertexArrays(1)[0];
         GL.bindVertexArray(vertexArray);
