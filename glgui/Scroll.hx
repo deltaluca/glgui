@@ -33,8 +33,8 @@ class Scroll<T> implements Element<Scroll<T>> {
     var vscrollPanel:Panel;
     var vscrollSlider:PanelButton;
 
-    var hpercent:Float = 0.0;
-    var vpercent:Float = 0.0;
+    public var hpercent:Float = 0.0;
+    public var vpercent:Float = 0.0;
 
     public static inline var gapf = 1/4;
     public static inline var railf = 1/4;

@@ -18,6 +18,8 @@ class Drawing {
     var vertexBuffer:Int;
     var numVertices:Int = 0;
 
+    var buffer:Array<Float>;
+
     var program:Int;
     var proj:Int;
 
@@ -25,6 +27,7 @@ class Drawing {
         vertexData = GL.allocBuffer(GL.FLOAT, VERTEX_SIZE*6); // 6 = lcf(line-vert-count,tri-vert-count)
         vertexArray = GL.genVertexArrays(1)[0];
         GL.bindVertexArray(vertexArray);
+        buffer = [];
 
         vertexBuffer = GL.genBuffers(1)[0];
         GL.bindBuffer(GL.ARRAY_BUFFER, vertexBuffer);
@@ -78,21 +81,11 @@ class Drawing {
 
     inline function vertex(vindex:Int, off:Int, p:Vec2, c:Vec4, dup=false) {
         vindex += off*VERTEX_SIZE;
+        vertexData.subDataVec(p, vindex);
+        vertexData.subDataVec(c, vindex+2);
         if (dup) {
-            vertexData[vindex]   = vertexData[vindex+VERTEX_SIZE]   = p.x;
-            vertexData[vindex+1] = vertexData[vindex+VERTEX_SIZE+1] = p.y;
-            vertexData[vindex+2] = vertexData[vindex+VERTEX_SIZE+2] = c.r;
-            vertexData[vindex+3] = vertexData[vindex+VERTEX_SIZE+3] = c.g;
-            vertexData[vindex+4] = vertexData[vindex+VERTEX_SIZE+4] = c.b;
-            vertexData[vindex+5] = vertexData[vindex+VERTEX_SIZE+5] = c.a;
-        }
-        else {
-            vertexData[vindex]   = p.x;
-            vertexData[vindex+1] = p.y;
-            vertexData[vindex+2] = c.r;
-            vertexData[vindex+3] = c.g;
-            vertexData[vindex+4] = c.b;
-            vertexData[vindex+5] = c.a;
+            vertexData.subDataVec(p, vindex+VERTEX_SIZE);
+            vertexData.subDataVec(c, vindex+VERTEX_SIZE+2);
         }
     }
 
@@ -110,11 +103,15 @@ class Drawing {
         vertex(vindex, 0, p, c);
     }
 
+    public inline function data(xs:Array<Float>) {
+        var vindex = reserve(Std.int(xs.length/VERTEX_SIZE));
+        vertexData.subData(xs, vindex);
+    }
+
     public function drawLine(p0:Vec2, p1:Vec2, c:Vec4) {
         swapLines();
-        var vindex = reserve(2);
-        vertex(vindex,0, p0, c);
-        vertex(vindex,1, p1, c);
+        data([p0.x,p0.y,c.x,c.y,c.z,c.w,
+              p1.x,p1.y,c.x,c.y,c.z,c.w]);
     }
 
     public function drawDashedLine(p0:Vec2, p1:Vec2, c:Vec4, solid:Float, gap:Float) {
@@ -147,6 +144,13 @@ class Drawing {
 
     public function drawCircle(p:Vec2, radius:Float, c:Vec4) {
         swapLines();
+        var cr = c.r;
+        var cg = c.g;
+        var cb = c.b;
+        var ca = c.a;
+        var px = p.x;
+        var py = p.y;
+
         var maxError = 0.5; // px
         var vCount;
         if (radius < maxError / 2) vCount = 3;
@@ -159,7 +163,47 @@ class Drawing {
             if (vCount < 3) vCount = 3;
         }
 
-        var vindex = reserve(vCount * 2); //GL_LINES, must duplicate
+        var data = [];
+
+        // Generate vertices via radial vector (radius, 0)
+        var dx = radius;
+        var dy = 0.0;
+
+        var angInc = Math.PI * 2 / vCount;
+        var cos = Math.cos(angInc);
+        var sin = Math.sin(angInc);
+
+        data.push(px+radius);
+        data.push(py);
+        data.push(cr);
+        data.push(cg);
+        data.push(cb);
+        data.push(ca);
+        for (i in 1...vCount) {
+            var nx = (dx * cos) - (dy * sin);
+            dy = (dx * sin) + (dy * cos);
+            dx = nx;
+            data.push(px+dx);
+            data.push(py+dy);
+            data.push(cr);
+            data.push(cg);
+            data.push(cb);
+            data.push(ca);
+            data.push(px+dx);
+            data.push(py+dy);
+            data.push(cr);
+            data.push(cg);
+            data.push(cb);
+            data.push(ca);
+        }
+        data.push(px+radius);
+        data.push(py);
+        data.push(cr);
+        data.push(cg);
+        data.push(cb);
+        data.push(ca);
+        this.data(data);
+/*        var vindex = reserve(vCount * 2); //GL_LINES, must duplicate
 
         // Generate vertices via radial vector (radius, 0)
         var dx = radius;
@@ -176,7 +220,7 @@ class Drawing {
             dx = nx;
             vertex(vindex,i*2-1, [p.x+dx,p.y+dy], c, true);
         }
-        vertex(vindex,vCount*2-1, [p.x+radius,p.y], c);
+        vertex(vindex,vCount*2-1, [p.x+radius,p.y], c);*/
     }
 
     public function drawFilledCircle(p:Vec2, radius:Float, c:Vec4) {
@@ -247,24 +291,25 @@ class Drawing {
         return this;
     }
 
-    public function setTransform(mat:Mat3x2) {
-        flush();
+    public function setTransform(mat:Mat3x2,noClear=false) {
+        flush(noClear);
         GL.uniformMatrix3x2fv(proj, false, mat);
         return this;
     }
 
-    public function flush() {
+    public function flush(noClear=false) {
         if (numVertices == 0) return this;
 
         GL.bufferSubData(GL.ARRAY_BUFFER, 0, GLfloatArray.view(vertexData, 0, numVertices*VERTEX_SIZE));
         GL.drawArrays(lines ? GL.LINES : GL.TRIANGLES, 0, numVertices);
 
-        clear();
+        if (!noClear)
+            clear();
         return this;
     }
 
-    public function end() {
-        flush();
+    public function end(noClear=false) {
+        flush(noClear);
         GL.disableVertexAttribArray(0);
         GL.disableVertexAttribArray(1);
         return this;

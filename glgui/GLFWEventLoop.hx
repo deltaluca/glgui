@@ -14,7 +14,8 @@ typedef TWindow = {
     thread:Thread,
     main:Thread,
     isBusy:Bool,
-    id:Int
+    id:Int,
+    closed:Bool
 }
 
 enum TMessage {
@@ -47,6 +48,29 @@ class GLFWEventLoop {
         windows = [];
     }
 
+    // Wait for specific message to come through for sync points.
+    // But do not discard intermediate messages.
+    public static function waitEvent(self:String, f:TMessage->Bool) {
+        track('#wait $self');
+        var cached:Array<TMessage> = [];
+        while (true) {
+            var msg:TMessage = Thread.readMessage(true);
+            track('#msg $self $msg');
+            if (f(msg)) {
+                for (m in cached) {
+                    track('#release $self $m');
+                    Thread.current().sendMessage(m);
+                }
+                track('#continue $self');
+                break;
+            }
+            else {
+                track('#cache $self $msg');
+                cached.push(msg);
+            }
+        }
+    }
+
     public static inline function track(msg:String, ?pos:haxe.PosInfos) {
         #if glgui_track
             var postrace = '${pos.className}::${pos.methodName} (${pos.fileName}@${pos.lineNumber})';
@@ -71,12 +95,14 @@ class GLFWEventLoop {
                     killed = true;
                     if (windows.length == 0) break;
                 case TOpenWindow(from, run):
+                    if (killed) continue;
                     var win = {
                         window : GLFW.createWindow(100,100,""),
                         main : Thread.current(),
                         thread : Thread.create(run),
                         isBusy : false,
-                        id : nextId++
+                        id : nextId++,
+                        closed: false
                     };
                     track('@ \033[31mGLFWEventLoop\033[m TInit -> [window]');
                     win.thread.sendMessage(TInit(win));
@@ -88,16 +114,22 @@ class GLFWEventLoop {
                 case TCloseWindow(win):
                     GLFW.destroyWindow(win.window);
                     windows.remove(win);
+                    win.closed = true;
                     if (killed && windows.length == 0) break;
                 case TSetSize(win, w, h):
+                    if (killed) continue;
                     GLFW.setWindowSize(win.window, w, h);
                 case TSetTitle(win, title):
+                    if (killed) continue;
                     GLFW.setWindowTitle(win.window, title);
                 case TNotClosing(win):
+                    if (killed) continue;
                     GLFW.setWindowShouldClose(win.window, false);
                 case TMakeVisible(win):
+                    if (killed) continue;
                     GLFW.showWindow(win.window);
                 case TContinue(win):
+                    if (killed) continue;
                     win.isBusy = false;
                 default:
             }

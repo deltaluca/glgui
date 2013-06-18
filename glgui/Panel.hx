@@ -70,12 +70,20 @@ class Panel implements Element<Panel> {
     }
 
     // Element
+    public inline function vert(data:Array<Float>, x:Float, y:Float, u:Float, v:Float, cr:Float, cg:Float, cb:Float, ca:Float) {
+        data.push(x); data.push(y);
+        data.push(u); data.push(v);
+        data.push(cr);
+        data.push(cg);
+        data.push(cb);
+        data.push(ca);
+    }
     public function commit() {
         var fit = getFit();
 
         buffer.clear();
         var d = StringBuffer.VERTEX_SIZE;
-        var index = buffer.reserve(6*9) - d;
+        var index = buffer.reserve(6*9);
 
         var t = 60/814; // normalised gap left in corner piece image to avoid leaking edges.
         var r = getRadius();
@@ -85,78 +93,85 @@ class Panel implements Element<Panel> {
         var y1 = y0 + fit.w;
 
         var col = getColour();
+        var cr = col.r;
+        var cg = col.g;
+        var cb = col.b;
+        var ca = col.a;
 
         // top-left
-        buffer.vertex(index+=d, x0,  y0,   t,t, col);
-        buffer.vertex(index+=d, x0+r,y0,   1,t, col);
-        buffer.vertex(index+=d, x0+r,y0+r, 1,1, col);
-        buffer.vertex(index+=d, x0,  y0,   t,t, col);
-        buffer.vertex(index+=d, x0+r,y0+r, 1,1, col);
-        buffer.vertex(index+=d, x0  ,y0+r, t,1, col);
+        var data = [];
+        vert(data, x0,  y0,   t,t, cr,cg,cb,ca);
+        vert(data, x0+r,y0,   1,t, cr,cg,cb,ca);
+        vert(data, x0+r,y0+r, 1,1, cr,cg,cb,ca);
+        vert(data, x0,  y0,   t,t, cr,cg,cb,ca);
+        vert(data, x0+r,y0+r, 1,1, cr,cg,cb,ca);
+        vert(data, x0  ,y0+r, t,1, cr,cg,cb,ca);
 
         // top-right
-        buffer.vertex(index+=d, x1-r,y0,   1,t, col);
-        buffer.vertex(index+=d, x1,  y0,   t,t, col);
-        buffer.vertex(index+=d, x1,  y0+r, t,1, col);
-        buffer.vertex(index+=d, x1-r,y0,   1,t, col);
-        buffer.vertex(index+=d, x1,  y0+r, t,1, col);
-        buffer.vertex(index+=d, x1-r,y0+r, 1,1, col);
+        vert(data, x1-r,y0,   1,t, cr,cg,cb,ca);
+        vert(data, x1,  y0,   t,t, cr,cg,cb,ca);
+        vert(data, x1,  y0+r, t,1, cr,cg,cb,ca);
+        vert(data, x1-r,y0,   1,t, cr,cg,cb,ca);
+        vert(data, x1,  y0+r, t,1, cr,cg,cb,ca);
+        vert(data, x1-r,y0+r, 1,1, cr,cg,cb,ca);
 
         // bottom-left
-        buffer.vertex(index+=d, x0,  y1-r, t,1, col);
-        buffer.vertex(index+=d, x0+r,y1-r, 1,1, col);
-        buffer.vertex(index+=d, x0+r,y1,   1,t, col);
-        buffer.vertex(index+=d, x0,  y1-r, t,1, col);
-        buffer.vertex(index+=d, x0+r,y1,   1,t, col);
-        buffer.vertex(index+=d, x0  ,y1,   t,t, col);
+        vert(data, x0,  y1-r, t,1, cr,cg,cb,ca);
+        vert(data, x0+r,y1-r, 1,1, cr,cg,cb,ca);
+        vert(data, x0+r,y1,   1,t, cr,cg,cb,ca);
+        vert(data, x0,  y1-r, t,1, cr,cg,cb,ca);
+        vert(data, x0+r,y1,   1,t, cr,cg,cb,ca);
+        vert(data, x0  ,y1,   t,t, cr,cg,cb,ca);
 
         // bottom-right
-        buffer.vertex(index+=d, x1-r,y1-r, 1,1, col);
-        buffer.vertex(index+=d, x1,  y1-r, t,1, col);
-        buffer.vertex(index+=d, x1,  y1,   t,t, col);
-        buffer.vertex(index+=d, x1-r,y1-r, 1,1, col);
-        buffer.vertex(index+=d, x1,  y1,   t,t, col);
-        buffer.vertex(index+=d, x1-r,y1,   1,t, col);
+        vert(data, x1-r,y1-r, 1,1, cr,cg,cb,ca);
+        vert(data, x1,  y1-r, t,1, cr,cg,cb,ca);
+        vert(data, x1,  y1,   t,t, cr,cg,cb,ca);
+        vert(data, x1-r,y1-r, 1,1, cr,cg,cb,ca);
+        vert(data, x1,  y1,   t,t, cr,cg,cb,ca);
+        vert(data, x1-r,y1,   1,t, cr,cg,cb,ca);
 
         // top
-        buffer.vertex(index+=d, x0+r,y0,   1,t, col);
-        buffer.vertex(index+=d, x1-r,y0,   1,t, col);
-        buffer.vertex(index+=d, x1-r,y0+r, 1,1, col);
-        buffer.vertex(index+=d, x0+r,y0,   1,t, col);
-        buffer.vertex(index+=d, x1-r,y0+r, 1,1, col);
-        buffer.vertex(index+=d, x0+r,y0+r, 1,1, col);
+        vert(data, x0+r,y0,   1,t, cr,cg,cb,ca);
+        vert(data, x1-r,y0,   1,t, cr,cg,cb,ca);
+        vert(data, x1-r,y0+r, 1,1, cr,cg,cb,ca);
+        vert(data, x0+r,y0,   1,t, cr,cg,cb,ca);
+        vert(data, x1-r,y0+r, 1,1, cr,cg,cb,ca);
+        vert(data, x0+r,y0+r, 1,1, cr,cg,cb,ca);
 
         // bottom
-        buffer.vertex(index+=d, x0+r,y1-r, 1,1, col);
-        buffer.vertex(index+=d, x1-r,y1-r, 1,1, col);
-        buffer.vertex(index+=d, x1-r,y1,   1,t, col);
-        buffer.vertex(index+=d, x0+r,y1-r, 1,1, col);
-        buffer.vertex(index+=d, x1-r,y1,   1,t, col);
-        buffer.vertex(index+=d, x0+r,y1,   1,t, col);
+        vert(data, x0+r,y1-r, 1,1, cr,cg,cb,ca);
+        vert(data, x1-r,y1-r, 1,1, cr,cg,cb,ca);
+        vert(data, x1-r,y1,   1,t, cr,cg,cb,ca);
+        vert(data, x0+r,y1-r, 1,1, cr,cg,cb,ca);
+        vert(data, x1-r,y1,   1,t, cr,cg,cb,ca);
+        vert(data, x0+r,y1,   1,t, cr,cg,cb,ca);
 
         // left
-        buffer.vertex(index+=d, x0,  y0+r, t,1, col);
-        buffer.vertex(index+=d, x0+r,y0+r, 1,1, col);
-        buffer.vertex(index+=d, x0+r,y1-r, 1,1, col);
-        buffer.vertex(index+=d, x0,  y0+r, t,1, col);
-        buffer.vertex(index+=d, x0+r,y1-r, 1,1, col);
-        buffer.vertex(index+=d, x0,  y1-r, t,1, col);
+        vert(data, x0,  y0+r, t,1, cr,cg,cb,ca);
+        vert(data, x0+r,y0+r, 1,1, cr,cg,cb,ca);
+        vert(data, x0+r,y1-r, 1,1, cr,cg,cb,ca);
+        vert(data, x0,  y0+r, t,1, cr,cg,cb,ca);
+        vert(data, x0+r,y1-r, 1,1, cr,cg,cb,ca);
+        vert(data, x0,  y1-r, t,1, cr,cg,cb,ca);
 
         // right
-        buffer.vertex(index+=d, x1-r,y0+r, 1,1, col);
-        buffer.vertex(index+=d, x1,  y0+r, t,1, col);
-        buffer.vertex(index+=d, x1,  y1-r, t,1, col);
-        buffer.vertex(index+=d, x1-r,y0+r, 1,1, col);
-        buffer.vertex(index+=d, x1,  y1-r, t,1, col);
-        buffer.vertex(index+=d, x1-r,y1-r, 1,1, col);
+        vert(data, x1-r,y0+r, 1,1, cr,cg,cb,ca);
+        vert(data, x1,  y0+r, t,1, cr,cg,cb,ca);
+        vert(data, x1,  y1-r, t,1, cr,cg,cb,ca);
+        vert(data, x1-r,y0+r, 1,1, cr,cg,cb,ca);
+        vert(data, x1,  y1-r, t,1, cr,cg,cb,ca);
+        vert(data, x1-r,y1-r, 1,1, cr,cg,cb,ca);
 
         // middle
-        buffer.vertex(index+=d, x0+r,y0+r, 1,1, col);
-        buffer.vertex(index+=d, x1-r,y0+r, 1,1, col);
-        buffer.vertex(index+=d, x1-r,y1-r, 1,1, col);
-        buffer.vertex(index+=d, x0+r,y0+r, 1,1, col);
-        buffer.vertex(index+=d, x1-r,y1-r, 1,1, col);
-        buffer.vertex(index+=d, x0+r,y1-r, 1,1, col);
+        vert(data, x0+r,y0+r, 1,1, cr,cg,cb,ca);
+        vert(data, x1-r,y0+r, 1,1, cr,cg,cb,ca);
+        vert(data, x1-r,y1-r, 1,1, cr,cg,cb,ca);
+        vert(data, x0+r,y0+r, 1,1, cr,cg,cb,ca);
+        vert(data, x1-r,y1-r, 1,1, cr,cg,cb,ca);
+        vert(data, x0+r,y1-r, 1,1, cr,cg,cb,ca);
+
+        buffer.vertexData.subData(data, index);
 
         return this;
     }

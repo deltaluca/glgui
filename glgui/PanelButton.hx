@@ -138,6 +138,7 @@ class PanelButton implements Element<PanelButton> {
     }
 
     // Element
+    public var textState:Int = 0;
     public function render(gui:Gui, mousePos:Maybe<Vec2>, proj:Mat3x2, xform:Mat3x2) {
         lastGui = gui;
         buttonBorder.render(gui, mousePos, proj, xform);
@@ -150,11 +151,14 @@ class PanelButton implements Element<PanelButton> {
         buttonMiddle.render(gui, mousePos, proj, xform);
 
         if (getText().length != 0) {
-            buttonText.text(getText());
-            if (getDisabled()) buttonText.text(getDisabledText());
-            if (toggleButton)
-                buttonText.text(getToggled() ? getText() : getDisabledText());
-            buttonText.commit().render(gui, mousePos, proj, xform);
+            var nState = 0;
+            if (getDisabled()) nState = 1;
+            if (toggleButton) nState = getToggled() ? 0 : 1;
+            if (nState != textState) {
+                textState = nState;
+                buttonText.text(nState == 0 ? getText() : getDisabledText()).commit();
+            }
+            buttonText.render(gui, mousePos, proj, xform);
         }
 
         if (getDisabled()) buttonOver.active(false);
