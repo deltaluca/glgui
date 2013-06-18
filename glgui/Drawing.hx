@@ -23,7 +23,7 @@ class Drawing {
     var program:Int;
     var proj:Int;
 
-    public function new() {
+    public function new(textured:Bool=false) {
         vertexData = GL.allocBuffer(GL.FLOAT, VERTEX_SIZE*6); // 6 = lcf(line-vert-count,tri-vert-count)
         vertexArray = GL.genVertexArrays(1)[0];
         GL.bindVertexArray(vertexArray);
@@ -35,25 +35,49 @@ class Drawing {
 
         var vertexShader = GL.createShader(GL.VERTEX_SHADER);
         var fragmentShader = GL.createShader(GL.FRAGMENT_SHADER);
-        GL.shaderSource(vertexShader, "
-            #version 130
-            in vec2 vPos;
-            in vec4 vColour;
-            uniform mat3x2 proj;
-            out vec4 colour;
-            void main() {
-                gl_Position = vec4(proj * vec3(vPos, 1), 0, 1);
-                colour = vColour;
-            }
-        ");
-        GL.shaderSource(fragmentShader, "
-            #version 130
-            in vec4 colour;
-            out vec4 outColour;
-            void main() {
-                outColour = colour;
-            }
-        ");
+        if (textured) {
+            GL.shaderSource(vertexShader, "
+                #version 130
+                in vec2 vPos;
+                in vec4 vColour;
+                uniform mat3x2 proj;
+                out vec4 uv_a;
+                void main() {
+                    gl_Position = vec4(proj * vec3(vPos, 1), 0, 1);
+                    uv_a = vColour;
+                }
+            ");
+            GL.shaderSource(fragmentShader, "
+                #version 130
+                in vec4 uv_a;
+                out vec4 outColour;
+                uniform sampler2D tex;
+                void main() {
+                    outColour = vec4(texture(tex, uv_a.xy).rgb,uv_a.a);
+                }
+            ");
+        }
+        else {
+            GL.shaderSource(vertexShader, "
+                #version 130
+                in vec2 vPos;
+                in vec4 vColour;
+                uniform mat3x2 proj;
+                out vec4 colour;
+                void main() {
+                    gl_Position = vec4(proj * vec3(vPos, 1), 0, 1);
+                    colour = vColour;
+                }
+            ");
+            GL.shaderSource(fragmentShader, "
+                #version 130
+                in vec4 colour;
+                out vec4 outColour;
+                void main() {
+                    outColour = colour;
+                }
+            ");
+        }
         GL.compileShader(vertexShader);
         GL.compileShader(fragmentShader);
 
@@ -280,10 +304,11 @@ class Drawing {
         return this;
     }
 
-    public function begin() {
+    public function begin(tex=-1) {
         GL.useProgram(program);
         GL.enableVertexAttribArray(0);
         GL.enableVertexAttribArray(1);
+        if (tex != -1) GL.bindTexture(GL.TEXTURE_2D, tex);
 
         GL.bindBuffer(GL.ARRAY_BUFFER, vertexBuffer);
         GL.vertexAttribPointer(0, 2, GL.FLOAT, false, VERTEX_SIZE*4, 0);
