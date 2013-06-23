@@ -1,5 +1,5 @@
-all: haxelib main
-	./bin/Main
+all: haxelib
+	haxe -x Testgui.hx -lib glgui -lib glfw3 -D glgui_track -debug
 
 main:
 	set -x

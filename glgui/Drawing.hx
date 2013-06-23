@@ -140,7 +140,7 @@ class Drawing {
 
     public function drawDashedLine(p0:Vec2, p1:Vec2, c:Vec4, solid:Float, gap:Float) {
         var dt = Vec2.distance(p0, p1);
-        var del = Vec2.normalize(p1 - p0);
+        var del = Vec2.normalise(p1 - p0);
         var d = 0.0;
         var p = p0;
         while (d < dt) {
