@@ -2,8 +2,8 @@ all: haxelib
 	haxe -x Testgui.hx -lib glgui -lib glfw3 -D glgui_track -debug
 
 main:
-	set -x
-	haxe -main Main -cpp bin -D HXCPP_M64 -lib glgui -lib glfw3 -D glgui_track
+	haxe -main Testgui -cpp bin -D HXCPP_M64 -lib glgui -lib glfw3 -debug
+	./bin/Testgui-debug
 
 haxelib:
 	rm -f glgui.zip
